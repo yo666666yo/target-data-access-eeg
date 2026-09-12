@@ -231,7 +231,7 @@ from matplotlib.colors import to_rgb                 # noqa: E402
 
 
 # ------------------------------------------------------------------- drawing
-W, H = 7.16, 1.92
+W, H = 7.16, 1.86
 fig = plt.figure(figsize=(W, H))
 ax = fig.add_axes([0, 0, 1, 1])
 ax.set_xlim(0, W)
@@ -321,8 +321,8 @@ GX0 = 2.44                          # middle: the 2x2 over the two procedures
 EX0, EX1 = 6.00, 7.10               # right: what everything is scored on
 BARX0, BARX1 = LX0 + 0.11, LX1 - 0.11
 BARW = BARX1 - BARX0
-BANDH = 0.86                        # the two zone bands on the left
-BAY0 = 1.06                         # held-out-subject band bottom
+BANDH = 0.82                        # the two zone bands on the left
+BAY0 = 1.00                         # held-out-subject band bottom
 BBY0 = 0.04                         # source-pool band bottom
 
 
@@ -363,43 +363,44 @@ text(BARX0 + BARW / 2, BBY0 + 0.105,
      "one stratified cut, fixed across conditions", 5.2, color=SUB)
 
 # ---------------- middle: the 2x2 over the two procedures ----------------
-CW, CH = 1.26, 0.60
-CX = [3.20, 4.49]                   # cell left edges: not aligned / aligned
-CY = [1.015, 0.295]                 # cell bottoms: not supervised / supervised
+# The two tinted bands partition the grid into four quadrants; each cell is
+# shrunk inside its quadrant and centred on it, so cell borders and band
+# edges never touch -- the bands read as background, the cells as foreground.
+CW, CH = 1.20, 0.54
+QX0, QX1 = 3.14, 5.81               # the grid's bounding box
+QY0, QY1 = 0.235, 1.675
+QXM, QYM = (QX0 + QX1) / 2, (QY0 + QY1) / 2
+CX = [(QX0 + QXM) / 2 - CW / 2, (QXM + QX1) / 2 - CW / 2]
+CY = [(QYM + QY1) / 2 - CH / 2, (QY0 + QYM) / 2 - CH / 2]
 CXM = [x + CW / 2 for x in CX]
 CYM = [y + CH / 2 for y in CY]
-GXR = CX[1] + CW + 0.07             # right edge of the banded grid
+GXR = QX1 + 0.01                    # arrows start just right of the grid
 TICKR = CX[0] - 0.10                # row labels are right-aligned to here
 
-# Each factor's "on" half is a tinted band running the length of its row or
-# column, so which cell has which procedure switched on is visible before any
-# label is read.  The fills are translucent rather than opaque so that the
-# square both bands cross -- EA+SUP -- shows both tints instead of whichever
-# band happened to be drawn second.
-rbox(CX[1] - 0.07, CY[1] - 0.07, GXR - CX[1] + 0.07, 1.775 - CY[1] + 0.07,
-     (*to_rgb(SIG), 0.085), (*to_rgb(SIG), 0.36), lw=0.8, rs=0.07, z=0)
-rbox(GX0, CY[1] - 0.07, GXR - GX0, CH + 0.14, (*to_rgb(LAB), 0.085),
+# Column band: the aligned half.  Row band: the supervised half.  Both are
+# translucent, so the square they cross -- EA+SUP -- shows both tints
+# instead of whichever band happened to be drawn second.
+rbox(QXM, QY0, QX1 - QXM, QY1 - QY0, (*to_rgb(SIG), 0.085),
+     (*to_rgb(SIG), 0.36), lw=0.8, rs=0.07, z=0)
+rbox(QX0, QY0, QX1 - QX0, QYM - QY0, (*to_rgb(LAB), 0.085),
      (*to_rgb(LAB), 0.36), lw=0.8, rs=0.07, z=0)
 
-# The corner block names the row factor and the header above the columns names
-# the column factor; between them they define the grid without a caption.  The
-# corner block is set flush right with the row labels, as one label column.
-_sw = icon_group_width("train", "supervise", 6.3, 0.062)
-icon_title(TICKR - _sw, 1.865, "train", "supervise", LAB, fs=6.3, ih=0.062)
-text(TICKR, 1.760, "on $C_s$", 6.3, color=LAB, weight="bold", ha="right")
+# The icon titles do double duty as the grid's factor headers: the align
+# header stands in the aligned column's band, the supervise header beside
+# the supervised row, each replacing the plain "aligned"/"supervised" word
+# that used to sit there.
+_hw = icon_group_width("align", "align on $C_s$", 6.2, 0.054)
+icon_title(CXM[1] - _hw / 2, 1.730, "align", "align on $C_s$", SIG,
+           fs=6.2, ih=0.054)
+text(CXM[0], 1.730, "not aligned", 6.0, color=GRAY, z=5)
 
-_hw = icon_group_width("align", "align on $C_s$", 6.6, 0.058)
-icon_title((CXM[0] + CXM[1]) / 2 - _hw / 2, 1.865, "align", "align on $C_s$",
-           SIG, fs=6.6, ih=0.058)
-
-for j, (lab, on) in enumerate([("not aligned", False), ("aligned", True)]):
-    text(CXM[j], 1.700, lab, 6.0, color=SIG if on else GRAY,
-         weight="bold" if on else "normal", z=5)
-
-for i, (lab, on) in enumerate([("not supervised", False),
-                               ("supervised", True)]):
-    text(TICKR, CYM[i], lab, 6.0, color=LAB if on else GRAY,
-         weight="bold" if on else "normal", ha="right", z=5)
+_sw = icon_group_width("train", "supervise", 6.0, 0.052)
+TXR = TICKR - 0.05                 # pulled left of the row band's edge
+icon_title(TXR - _sw, CYM[1] + 0.058, "train", "supervise", LAB,
+           fs=6.0, ih=0.052)
+text(TXR, CYM[1] - 0.075, "on $C_s$", 6.0, color=LAB, weight="bold",
+     ha="right")
+text(TICKR, CYM[0], "not supervised", 6.0, color=GRAY, ha="right", z=5)
 
 # (row, col) -> name, badge colours, what it reads from C_s, what it does
 CELLS = {
@@ -419,28 +420,27 @@ for (i, j), (name, (c1, c2), reads, gloss) in CELLS.items():
     ix = x0 + 0.075
 
     bw = text_width(name, 6.4, "bold") + 0.16
-    badge = rbox(ix, y0 + 0.350, bw, 0.175, c1, "none", rs=0.042, z=5)
+    badge = rbox(ix, y0 + 0.315, bw, 0.17, c1, "none", rs=0.042, z=5)
     if c2 is not None:
         # EA+SUP is one badge in two colours: the condition is both procedures,
         # and a single flat colour would invent a fifth category for it.
-        half = Rectangle((ix + bw / 2, y0 + 0.350), bw / 2, 0.175, fc=c2,
+        half = Rectangle((ix + bw / 2, y0 + 0.315), bw / 2, 0.17, fc=c2,
                          ec="none", zorder=6)
         ax.add_patch(half)
         half.set_clip_path(badge)
-    text(ix + bw / 2, y0 + 0.4375, name, 6.4, color="white", weight="bold",
+    text(ix + bw / 2, y0 + 0.40, name, 6.4, color="white", weight="bold",
          z=7)
 
     px = ix
-    text(px, y0 + 0.235, "reads:", 5.2, color=GRAY, ha="left")
+    text(px, y0 + 0.21, "reads:", 5.2, color=GRAY, ha="left")
     px += text_width("reads:", 5.2) + 0.045
     for lbl, colour in reads:
-        px += pill(px, y0 + 0.235, lbl, colour) + 0.035
+        px += pill(px, y0 + 0.21, lbl, colour) + 0.035
 
-    text(ix, y0 + 0.098, gloss, 5.3, color=SUB, ha="left")
+    text(ix, y0 + 0.08, gloss, 5.1, color=SUB, ha="left")
 
-text((GX0 + GXR) / 2, 0.105,
-     "supervising reads the same signals alignment does — the grid "
-     "crosses procedures, not kinds of access", 5.4, color=SUB)
+text((QX0 + QX1) / 2, 0.105,
+     "supervision uses the same $C_s$ signals as alignment", 5.4, color=SUB)
 
 # ---------------- right: the single scoring rule ----------------
 rbox(EX0, CY[1], EX1 - EX0, CY[0] + CH - CY[1], "white", GREEN, lw=1.3, z=2)
