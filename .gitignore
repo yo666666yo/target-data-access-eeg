@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv*/
+.cache/
+mne_data/
+
+# LaTeX build products; main.pdf is committed deliberately.
+*.aux
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg

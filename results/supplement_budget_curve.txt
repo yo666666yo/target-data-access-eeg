@@ -1,0 +1,16 @@
+Calibration-budget dose curve. Effects are within-subject means over
+runs, in percentage points; the reserved test half is identical at
+every budget, so only the calibration set changes.
+
+dataset          |C_s|   repeats              SUP - SRC               SUP - EA
+BCI IV 2a          288      1.31   +9.45 [ +5.86,+12.76]   +7.87 [ +4.87,+11.01] p=0.0041
+BCI IV 2a          144      2.61   +8.85 [ +5.68,+11.72]   +7.29 [ +4.73, +9.99] p=0.0041
+BCI IV 2a           45      8.36   +7.32 [ +4.71, +9.71]   +5.88 [ +3.81, +8.05] p=0.0041
+BNCI2014-002        80      2.18   +6.52 [ +3.24,+10.24]   -1.55 [ -4.49, +0.89] p=0.3323
+BNCI2014-002        45      3.88   +5.18 [ +2.32, +8.57]   -2.62 [ -5.06, -0.53] p=0.0492
+PhysionetMI         45     16.83   +4.89 [ +3.48, +6.35]   -4.23 [ -5.84, -2.70] p=0.0001
+
+Read the within-dataset rows first: there the source pool, classes,
+channels and cohort are fixed, so budget and repetition are the only
+things moving. A flat SUP-EA column down a dataset's rows would mean
+the cross-dataset reversal is not a budget effect.
