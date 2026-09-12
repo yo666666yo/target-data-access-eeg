@@ -1,52 +1,46 @@
-\documentclass[conference]{IEEEtran}
-\IEEEoverridecommandlockouts
-\usepackage{cite}
-\usepackage{amsmath,amssymb}
-\usepackage{graphicx}
-\usepackage{booktabs}
-\usepackage{url}
-\usepackage{microtype}
-\usepackage{xcolor}
+\documentclass{article}
+\usepackage{spconf,amsmath,amssymb,graphicx,booktabs,microtype}
+% hidelinks: the review PDF should carry no coloured frames around citations
+% and URLs, which is what plain hyperref draws.
+\usepackage[hidelinks]{hyperref}
 
-% Short display forms keep the two-column source readable; complete values
-% remain in every schema-v4 log, the manifest, and the release note.
-% One manifest per dataset over 18 accepted logs each; all 54 share one source
-% snapshot.  2a 47caeb94, BNCI2014-002 37f6785c, PhysionetMI 6e384830.
-\newcommand{\manifestid}{\texttt{47caeb94}}
-\newcommand{\datasetsha}{\texttt{d59580c7}}
-\newcommand{\sourcesha}{\texttt{ce80d930}}
+\makeatletter
+% spconf restyles only numbered headings: it redefines \@sect and leaves
+% \@ssect alone, so \section* keeps article's much larger default and the
+% unnumbered statement below would tower over the headings around it.
+\def\@ssect#1#2#3#4#5{%
+  \begingroup\bf\centering
+  {\interlinepenalty \@M \uppercase{#5}\par}%
+  \endgroup
+  \@tempskipa #3\relax
+  \@xsect{\@tempskipa}}
+\makeatother
 
-\title{Target-Data Access and Aggregation Effects in Cross-Subject EEG Evaluation}
+\title{TARGET-DATA ACCESS AND AGGREGATION EFFECTS IN CROSS-SUBJECT EEG EVALUATION}
 
-\author{%
-\IEEEauthorblockN{Chenghao Li}
-\IEEEauthorblockA{\textit{College of Software Engineering} \\
-\textit{Southeast University}\\
-Nanjing, China \\
-yo666666yo@seu.edu.cn}
-\and
-\IEEEauthorblockN{Haochen Zhou}
-\IEEEauthorblockA{\textit{School of Artificial Intelligence} \\
-\textit{Southeast University}\\
-Nanjing, China \\
-213241737@seu.edu.cn}
-\and
-\IEEEauthorblockN{Chunfeng Yang}
-\IEEEauthorblockA{\textit{School of Computer Science and Engineering} \\
-\textit{Southeast University}\\
-Nanjing, China \\
-chunfeng.yang@seu.edu.cn}
-}
+\name{Chenghao Li$^{\star}$ \qquad Haochen Zhou$^{\dagger}$ \qquad Chunfeng Yang$^{\ddagger}$}
+\address{%
+$^{\star}$College of Software Engineering, Southeast University, Nanjing, China \\
+$^{\dagger}$School of Artificial Intelligence, Southeast University, Nanjing, China \\
+$^{\ddagger}$School of Computer Science and Engineering, Southeast University, Nanjing, China \\
+\texttt{\{yo666666yo, 213241737, chunfeng.yang\}@seu.edu.cn}}
 
 \begin{document}
+\ninept
 \maketitle
 
 \begin{abstract}
-Cross-subject EEG decoders are compared across protocols that use the target subject differently, and the gaps between them are read as the value of that access---a reading that requires everything else to be matched. We divide each held-out subject's trials once into an available half and a reserved test half, score every condition on the same reserved half, and cross two procedures, Euclidean Alignment and supervised training on the available half, holding the source partition, the per-epoch sample budget, the target sampling rate and the scored trials fixed and verified against the realized indices. On three motor-imagery datasets spanning 9 to 105 subjects, and under one stated training policy, supervision helps on all three and alignment on two, but their ordering reverses---supervision leads alignment by $7.9$\,pp on BCI IV 2a and trails it by $4.2$\,pp on PhysionetMI---while no interaction replicates. Fixing the batch share does not fix exposure---each calibration trial is replayed $1.3$ to $16.6$ times per epoch depending on how many exist---but capping the calibration set within a dataset moves the effect by only $2$ of the $12$\,pp involved, so the reversal is not a budget artifact. A fixed-prediction control that only regroups identical predictions behaves oppositely: the between-subject spread exceeds what random groups of the same size give by $6.2$, $2.4$ and $1.8$ times, and a conditionally binomial correction attributes $2\%$, $17\%$ and $29\%$ of the observed variance to finite trials. That changes a reading of these data---raw spreads rank PhysionetMI as the more heterogeneous cohort, corrected ones do not---so a between-subject standard deviation needs the trials it came from.
+Cross-subject EEG decoders are compared across protocols that use the target subject differently, and the gaps between them are read as the value of that access. That reading holds only if everything else is matched. We divide each held-out subject's trials into an available half and a reserved half, score every condition on the same reserved half, and cross two procedures: Euclidean Alignment and supervised training on the available half. The source partition, epoch budget, target sampling rate and scored trials are fixed and checked against the realized indices. On three motor-imagery datasets spanning 9 to 105 subjects both procedures help, but their ordering reverses and no interaction replicates; capping the calibration set rules out its size as the cause. A second control, regrouping identical predictions without retraining, shows a reported between-subject spread also tracks the trials per subject. Neither what target access buys nor what a spread means is portable across datasets.
 \end{abstract}
+
+\begin{keywords}
+Brain--computer interfaces, cross-subject evaluation, Euclidean alignment, calibration data, between-subject variability
+\end{keywords}
 
 \input{sections/01_introduction}
 % Related work is folded into the introduction to fit the four-page limit.
+% sections/015_related.tex is retained for the longer arXiv version.
+%\input{sections/015_related}
 \input{sections/02_method}
 \input{sections/03_results}
 \input{sections/04_conclusion}
@@ -60,6 +54,6 @@ the original investigators. No new data were recorded and no human participants 
 this study, so no additional ethical approval was required. The authors declare no conflict of
 interest.
 
-\bibliographystyle{IEEEtran}
+\bibliographystyle{IEEEbib}
 \bibliography{references}
 \end{document}

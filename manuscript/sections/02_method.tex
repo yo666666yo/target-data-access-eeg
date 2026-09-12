@@ -1,11 +1,18 @@
 \section{Conditions and Controls}
 \label{sec:method}
 
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/figure1.pdf}
+    \caption{The two divisions of the data. Each is made once, before any condition runs, and is identical in all four: the held-out subject is cut in half by class into an available part $C_s$ and a reserved part $T_s$, and the source pool is cut into training and checkpoint-selection trials.}
+    \label{fig:split}
+\end{figure}
+
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figures/figure1.pdf}
-    \caption{Left: the two divisions of the data, each made once and identical in every condition. Right: the four conditions as a $2\times2$ over the two procedures, with what each reads from the held-out subject's available half $C_s$. Supervised training necessarily reads those trials' signals as well as their labels, so the grid crosses two \emph{procedures}, not two independent kinds of access. Everything else is held fixed: the source training set, the selection set, the samples drawn per epoch and the expected target share of a batch, and all four are scored on the same reserved trials in the same order.}
-    \label{fig:design}
+    \includegraphics[width=\textwidth]{figures/figure2.pdf}
+    \caption{The four conditions as a $2\times2$ over the two procedures, with what each reads from the held-out subject's available half $C_s$. Supervised training necessarily reads those trials' signals as well as their labels, so the grid crosses two \emph{procedures}, not two independent kinds of access. Everything else is held fixed: the source training set, the selection set, the samples drawn per epoch and the expected target share of a batch, and all four are scored on the same reserved trials in the same order.}
+    \label{fig:grid}
 \end{figure*}
 
 \subsection{Splitting the target subject}
@@ -14,7 +21,7 @@ We evaluate leave-one-subject-out on three motor-imagery datasets \cite{tangerma
 Each held-out subject's trials are divided once, stratified by class, into an \emph{available} half $C_s$ and a \emph{reserved test} half $T_s$. That 50/50 division is the declared target-data budget: 288, 80 and 45 trials per half. It is seeded per subject, so no condition can change which trials are reserved. $T_s$ is the only thing any condition is scored on, and no condition touches it.
 
 \subsection{Two procedures, four conditions}
-Figure~\ref{fig:design} summarizes the design. The two procedures are not independent kinds of access: supervised training on $C_s$ reads those trials' signals as well as their labels. The grid crosses procedures, not permissions.
+Figure~\ref{fig:split} shows the two divisions and Fig.~\ref{fig:grid} the design. The two procedures are not independent kinds of access: supervised training on $C_s$ reads those trials' signals as well as their labels. The grid crosses procedures, not permissions.
 
 \emph{Alignment} uses signals and no labels. Euclidean Alignment~\cite{he2020transfer} whitens a subject's trials by $\bar{R}^{-1/2}$, where $\bar{R}$ is the mean over that subject's trials of the sample spatial covariance $XX^{\top}/T$, computed on the band-passed epochs with no shrinkage and inverted through an eigendecomposition whose eigenvalues are floored at $10^{-10}$ to keep a rank-deficient epoch from blowing up. Source subjects are whitened by a reference estimated from all of their trials, which is legitimate because all of them are available. The held-out subject's reference is estimated from $C_s$ alone and then frozen; $T_s$ is transformed by it but never contributes to it. The switch also changes how every source subject is preprocessed, so the measured effect is that of the whole alignment pipeline. \emph{Target supervision} adds $C_s$ to the training set with its labels attached.
 

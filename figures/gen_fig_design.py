@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
-"""Figure 1: the target-data design.
+"""Figures 1 and 2: the target-data design.
 
-Left: the two divisions of the data, drawn as two banded zones.  The held-out
-subject is cut once into an available half and a reserved test half; the source
-pool is cut once into training and checkpoint-selection trials.  Both cuts are
-made before any condition runs and are identical in all four.
+Figure 1, one column wide: the two divisions of the data, drawn as banded
+zones.  The held-out subject is cut once into an available half and a reserved
+test half; the source pool is cut once into training and checkpoint-selection
+trials.  Both cuts are made before any condition runs and are identical in all
+four conditions.
 
-Right: the design itself, as a 2x2 over the two procedures -- align on $C_s$,
-supervise on $C_s$.  Each cell states what that condition reads from $C_s$,
-which is what makes the caveat visible: supervision reads the same signals
-alignment does, so the grid crosses procedures, not kinds of access.  All four
-are scored on the same reserved half.
+Figure 2, the full text width: the design itself, as a 2x2 over the two
+procedures.  Each factor is named on the axis state that switches it on, and
+each cell states what that condition reads from $C_s$ -- which is what makes
+the caveat visible, since supervision reads the same signals alignment does,
+so the grid crosses procedures rather than kinds of access.  All four are
+scored on the same reserved half.
 
-Stage icons are true vector graphics converted from the source SVG path data
-(arcs approximated by cubic Beziers), so the PDF is infinitely zoomable.
+Each figure is authored at exactly the width it is placed at, so nothing is
+scaled and the point sizes here are also the point sizes on the page; none is
+below 9 pt.  That floor is what splits this into two figures: two access pills
+side by side do not fit an 86 mm column at 9 pt, so the grid cannot be a
+single-column figure and the two panels cannot share one.
+
+Icons are true vector graphics converted from the source SVG path data (arcs
+approximated by cubic Beziers), so the PDFs are infinitely zoomable.
 Self-contained: only matplotlib is required.
 
-Run:  python figures/gen_fig_design.py  ->  manuscript/figures/figure1.pdf
+Run:  python figures/gen_fig_design.py
+      -> manuscript/figures/figure1.pdf, manuscript/figures/figure2.pdf
 """
 import math
 import re
@@ -231,12 +240,6 @@ from matplotlib.colors import to_rgb                 # noqa: E402
 
 
 # ------------------------------------------------------------------- drawing
-W, H = 7.16, 1.86
-fig = plt.figure(figsize=(W, H))
-ax = fig.add_axes([0, 0, 1, 1])
-ax.set_xlim(0, W)
-ax.set_ylim(0, H)
-ax.axis("off")
 
 INK, SUB = "#1a1a1a", "#4d4d4d"
 FLOW, GRAY, BORDER = "#3d3d3d", "#68727e", "#9aa0a6"
@@ -312,159 +315,185 @@ def pill(x, y, label, colour, fs=5.2, pad=0.055, h=0.132):
     return w
 
 
-# ---------------- geometry ----------------
-# The figure is one \textwidth wide and no taller than the panel it replaces:
-# the paper's four content pages have no slack, and a figure that costs an
-# extra half inch pushes the discussion onto the references page.
-LX0, LX1 = 0.06, 2.34               # left: how the trials are divided
-GX0 = 2.44                          # middle: the 2x2 over the two procedures
-EX0, EX1 = 6.00, 7.10               # right: what everything is scored on
-BARX0, BARX1 = LX0 + 0.11, LX1 - 0.11
+# ---------------- canvases ----------------
+# Two figures, authored at their exact placed width so that no scaling happens
+# and the sizes below are also the sizes on the page: the divisions at one
+# ICASSP column (86 mm), the design grid at the full text width (178 mm).  The
+# kit allows nothing under 9 pt, and that is what forces the split -- two pills
+# side by side do not fit an 86 mm column at 9 pt, so the grid cannot be a
+# single-column figure and the two panels cannot share one.
+COL_W, FULL_W = 3.39, 7.00
+
+FS_TITLE, FS_SUB = 9.5, 9.0        # zone heading / its one line of detail
+FS_BAR, FS_BARSM = 9.5, 9.0        # division-bar labels
+FS_HEAD, FS_TICK = 10.0, 9.5       # grid factor headers / axis states
+FS_BADGE, FS_PILL = 10.0, 9.0      # condition name / what it reads
+FS_BOX, FS_BOXSM = 10.5, 9.0       # scoring box
+FS_NOTE = 9.0                      # the caveat under the grid
+
+
+def new_canvas(w, h):
+    """Start a fresh figure; the drawing helpers read fig/ax as globals."""
+    global fig, ax
+    fig = plt.figure(figsize=(w, h))
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, w)
+    ax.set_ylim(0, h)
+    ax.axis("off")
+
+
+def save(name):
+    root = pathlib.Path(__file__).resolve().parents[1]
+    out = root / "manuscript" / "figures" / (name + ".pdf")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, format="pdf")
+    png = root / "figures" / (name + "_preview.png")
+    fig.savefig(png, dpi=230)
+    print("[saved]", out)
+    print("[saved]", png)
+
+
+# ================= figure 1: the two fixed divisions =================
+BANDH = 0.88
+new_canvas(COL_W, 2 * BANDH + 0.06)
+
+BX0, BX1 = 0.02, COL_W - 0.02
+BARX0, BARX1 = BX0 + 0.12, BX1 - 0.12
 BARW = BARX1 - BARX0
-BANDH = 0.82                        # the two zone bands on the left
-BAY0 = 1.00                         # held-out-subject band bottom
-BBY0 = 0.04                         # source-pool band bottom
 
 
 def zone(y0, title_icon, title, sub, colour, bg, ec):
-    """One banded zone: tinted field, icon-and-title, one line of detail."""
-    rbox(LX0, y0, LX1 - LX0, BANDH, bg, ec, lw=0.8, rs=0.07, z=0)
-    icon_title(LX0 + 0.09, y0 + 0.740, title_icon, title, colour)
-    text(LX0 + 0.09, y0 + 0.625, sub, 5.2, color=colour, ha="left")
+    """One banded division zone: tinted field, icon-and-title, one detail line."""
+    rbox(BX0, y0, BX1 - BX0, BANDH, bg, ec, lw=0.8, rs=0.06, z=0)
+    icon_title(BX0 + 0.10, y0 + 0.71, title_icon, title, colour, fs=FS_TITLE,
+               ih=0.075)
+    text(BX0 + 0.10, y0 + 0.54, sub, FS_SUB, color=colour, ha="left")
 
 
 def divide(y0, left_frac, left_fill, right_fill, ec, left_lab, right_lab,
-           left_fs=6.3, right_fs=6.3):
+           left_fs=FS_BAR, right_fs=FS_BAR):
     """The division bar inside a zone, drawn as two abutting boxes."""
-    bh, by = 0.28, y0 + 0.225
-    rbox(BARX0, by, BARW * left_frac, bh, left_fill, ec, lw=1.0, rs=0.035, z=2)
+    bh, by = 0.28, y0 + 0.12
+    rbox(BARX0, by, BARW * left_frac, bh, left_fill, ec, lw=1.0, rs=0.03, z=2)
     rbox(BARX0 + BARW * left_frac, by, BARW * (1 - left_frac), bh, right_fill,
-         ec, lw=1.0, rs=0.035, z=2)
+         ec, lw=1.0, rs=0.03, z=2)
     text(BARX0 + BARW * left_frac / 2, by + bh / 2, left_lab, left_fs,
          weight="bold")
     text(BARX0 + BARW * (1 + left_frac) / 2, by + bh / 2, right_lab, right_fs,
          weight="bold")
 
 
-# ---------------- left panel: the two fixed divisions ----------------
-zone(BAY0, "split", "HELD-OUT SUBJECT $s$",
-     "cut once, stratified — 288 / 80 / 45 trials each half",
+_top = BANDH + 0.06
+zone(_top, "split", "HELD-OUT SUBJECT $s$",
+     "cut once, stratified — 288 / 80 / 45 per half",
      YEL_DK, YEL_BG, YEL_EC)
-divide(BAY0, 0.5, "white", "#ededed", INK, "available $C_s$", "reserved $T_s$")
-text(BARX0 + BARW / 4, BAY0 + 0.105, "all a condition may use", 5.2, color=SUB)
-text(BARX0 + BARW * 0.75, BAY0 + 0.105, "scored, never trained on", 5.2,
-     color=GREEN)
+divide(_top, 0.5, "white", "#ededed", INK, "available $C_s$",
+       "reserved $T_s$")
 
-zone(BBY0, "select", "SOURCE POOL — $N{-}1$ SUBJECTS",
+zone(0.02, "select", "SOURCE POOL — $N{-}1$ SUBJECTS",
      "every trial used, in every condition", GRN_DK, GRN_BG, GRN_EC)
-divide(BBY0, 0.8, "white", "#ededed", GRAY, "training  80%", "sel. 20%",
-       right_fs=5.6)
-text(BARX0 + BARW / 2, BBY0 + 0.105,
-     "one stratified cut, fixed across conditions", 5.2, color=SUB)
+divide(0.02, 0.8, "white", "#ededed", GRAY, "training  80%", "sel. 20%",
+       right_fs=FS_BARSM)
 
-# ---------------- middle: the 2x2 over the two procedures ----------------
-# The two tinted bands partition the grid into four quadrants; each cell is
-# shrunk inside its quadrant and centred on it, so cell borders and band
-# edges never touch -- the bands read as background, the cells as foreground.
-CW, CH = 1.20, 0.54
-QX0, QX1 = 3.14, 5.81               # the grid's bounding box
-QY0, QY1 = 0.235, 1.675
-QXM, QYM = (QX0 + QX1) / 2, (QY0 + QY1) / 2
-CX = [(QX0 + QXM) / 2 - CW / 2, (QXM + QX1) / 2 - CW / 2]
-CY = [(QYM + QY1) / 2 - CH / 2, (QY0 + QYM) / 2 - CH / 2]
+save("figure1")
+
+# ================= figure 2: the 2x2 over the two procedures =================
+new_canvas(FULL_W, 1.95)
+
+LEFT = 0.05
+TICKR = 1.06                        # row labels are right-aligned to here
+TICKY = 1.78                        # the column labels
+CW, CH = 1.85, 0.56
+CX = [1.18, 3.09]                   # not aligned / aligned
+CY = [1.03, 0.33]                   # not supervised / supervised
 CXM = [x + CW / 2 for x in CX]
 CYM = [y + CH / 2 for y in CY]
-GXR = QX1 + 0.01                    # arrows start just right of the grid
-TICKR = CX[0] - 0.10                # row labels are right-aligned to here
+BANDPAD = 0.05
+GXR = CX[1] + CW + BANDPAD
+EX0, EX1 = 5.14, 6.95
 
-# Column band: the aligned half.  Row band: the supervised half.  Both are
-# translucent, so the square they cross -- EA+SUP -- shows both tints
-# instead of whichever band happened to be drawn second.
-rbox(QXM, QY0, QX1 - QXM, QY1 - QY0, (*to_rgb(SIG), 0.085),
-     (*to_rgb(SIG), 0.36), lw=0.8, rs=0.07, z=0)
-rbox(QX0, QY0, QX1 - QX0, QYM - QY0, (*to_rgb(LAB), 0.085),
-     (*to_rgb(LAB), 0.36), lw=0.8, rs=0.07, z=0)
+# Each factor's "on" half is a tinted band running the length of its row or
+# column.  The fills are translucent rather than opaque so that the square both
+# bands cross -- EA+SUP -- shows both tints instead of whichever was drawn
+# second.
+rbox(CX[1] - BANDPAD, CY[1] - BANDPAD, GXR - CX[1] + BANDPAD,
+     1.90 - CY[1] + BANDPAD, (*to_rgb(SIG), 0.085), (*to_rgb(SIG), 0.36),
+     lw=0.8, rs=0.06, z=0)
+rbox(LEFT, CY[1] - BANDPAD, GXR - LEFT, CH + 2 * BANDPAD,
+     (*to_rgb(LAB), 0.085), (*to_rgb(LAB), 0.36), lw=0.8, rs=0.06, z=0)
 
-# The icon titles do double duty as the grid's factor headers: the align
-# header stands in the aligned column's band, the supervise header beside
-# the supervised row, each replacing the plain "aligned"/"supervised" word
-# that used to sit there.
-_hw = icon_group_width("align", "align on $C_s$", 6.2, 0.054)
-icon_title(CXM[1] - _hw / 2, 1.730, "align", "align on $C_s$", SIG,
-           fs=6.2, ih=0.054)
-text(CXM[0], 1.730, "not aligned", 6.0, color=GRAY, z=5)
+# Each factor is named once, on the axis state that switches it on, carrying
+# its icon: a separate header block and a bare "aligned"/"supervised" tick
+# said the same thing twice.  The off states stay plain grey text, so which
+# half of each factor a cell sits in is still readable at a glance.
+text(CXM[0], TICKY, "not aligned", FS_TICK, color=GRAY, z=5)
+_hw = icon_group_width("align", "aligned on $C_s$", FS_TICK, 0.072)
+icon_title(CXM[1] - _hw / 2, TICKY, "align", "aligned on $C_s$", SIG,
+           fs=FS_TICK, ih=0.072)
 
-_sw = icon_group_width("train", "supervise", 6.0, 0.052)
-TXR = TICKR - 0.05                 # pulled left of the row band's edge
-icon_title(TXR - _sw, CYM[1] + 0.058, "train", "supervise", LAB,
-           fs=6.0, ih=0.052)
-text(TXR, CYM[1] - 0.075, "on $C_s$", 6.0, color=LAB, weight="bold",
+text(TICKR, CYM[0], "not supervised", FS_TICK, color=GRAY, ha="right", z=5)
+# Two lines: at 9.5 pt "supervised on $C_s$" plus its icon is half again as
+# wide as the label gutter, and widening the gutter would cost the cells the
+# room the "reads:" pills need.
+_sw = icon_group_width("train", "supervised", FS_TICK, 0.072)
+icon_title(TICKR - _sw, CYM[1] + 0.085, "train", "supervised", LAB,
+           fs=FS_TICK, ih=0.072)
+text(TICKR, CYM[1] - 0.085, "on $C_s$", FS_TICK, color=LAB, weight="bold",
      ha="right")
-text(TICKR, CYM[0], "not supervised", 6.0, color=GRAY, ha="right", z=5)
 
-# (row, col) -> name, badge colours, what it reads from C_s, what it does
+# (row, col) -> name, badge colours, what it reads from C_s
 CELLS = {
-    (0, 0): ("SRC", (NEUT, None), [("none", NEUT)],
-             "trained on source subjects only"),
-    (0, 1): ("EA", (SIG, None), [("signals", SIG)],
-             "whitener fitted on $C_s$, frozen"),
-    (1, 0): ("SUP", (LAB, None), [("signals", SIG), ("labels", LAB)],
-             "$C_s$ joins the training set"),
-    (1, 1): ("EA+SUP", (SIG, LAB), [("signals", SIG), ("labels", LAB)],
-             "both, on the same $C_s$"),
+    (0, 0): ("SRC", (NEUT, None), [("none", NEUT)]),
+    (0, 1): ("EA", (SIG, None), [("signals", SIG)]),
+    (1, 0): ("SUP", (LAB, None), [("signals", SIG), ("labels", LAB)]),
+    (1, 1): ("EA+SUP", (SIG, LAB), [("signals", SIG), ("labels", LAB)]),
 }
 
-for (i, j), (name, (c1, c2), reads, gloss) in CELLS.items():
+for (i, j), (name, (c1, c2), reads) in CELLS.items():
     x0, y0 = CX[j], CY[i]
-    rbox(x0, y0, CW, CH, "white", BORDER, lw=0.9, rs=0.05, z=2)
-    ix = x0 + 0.075
+    rbox(x0, y0, CW, CH, "white", BORDER, lw=0.9, rs=0.04, z=2)
+    ix = x0 + 0.10
 
-    bw = text_width(name, 6.4, "bold") + 0.16
-    badge = rbox(ix, y0 + 0.315, bw, 0.17, c1, "none", rs=0.042, z=5)
+    bw = text_width(name, FS_BADGE, "bold") + 0.18
+    badge = rbox(ix, y0 + 0.31, bw, 0.20, c1, "none", rs=0.035, z=5)
     if c2 is not None:
         # EA+SUP is one badge in two colours: the condition is both procedures,
         # and a single flat colour would invent a fifth category for it.
-        half = Rectangle((ix + bw / 2, y0 + 0.315), bw / 2, 0.17, fc=c2,
+        half = Rectangle((ix + bw / 2, y0 + 0.31), bw / 2, 0.20, fc=c2,
                          ec="none", zorder=6)
         ax.add_patch(half)
         half.set_clip_path(badge)
-    text(ix + bw / 2, y0 + 0.40, name, 6.4, color="white", weight="bold",
+    text(ix + bw / 2, y0 + 0.41, name, FS_BADGE, color="white", weight="bold",
          z=7)
 
     px = ix
-    text(px, y0 + 0.21, "reads:", 5.2, color=GRAY, ha="left")
-    px += text_width("reads:", 5.2) + 0.045
+    text(px, y0 + 0.15, "reads:", FS_PILL, color=GRAY, ha="left")
+    px += text_width("reads:", FS_PILL) + 0.05
     for lbl, colour in reads:
-        px += pill(px, y0 + 0.21, lbl, colour) + 0.035
+        px += pill(px, y0 + 0.15, lbl, colour, fs=FS_PILL, pad=0.06,
+                   h=0.17) + 0.04
 
-    text(ix, y0 + 0.08, gloss, 5.1, color=SUB, ha="left")
+text((LEFT + GXR) / 2, 0.10,
+     "supervision uses the same $C_s$ signals as alignment", FS_NOTE,
+     color=SUB)
 
-text((QX0 + QX1) / 2, 0.105,
-     "supervision uses the same $C_s$ signals as alignment", 5.4, color=SUB)
-
-# ---------------- right: the single scoring rule ----------------
-rbox(EX0, CY[1], EX1 - EX0, CY[0] + CH - CY[1], "white", GREEN, lw=1.3, z=2)
+# ---------------- the single scoring rule ----------------
+rbox(EX0, CY[1], EX1 - EX0, CY[0] + CH - CY[1], "white", GREEN, lw=1.3,
+     rs=0.05, z=2)
 ecx = (EX0 + EX1) / 2
-bcy = 1.275                          # centre of the badge, and of its tick
-rbox(EX0 + 0.16, bcy - 0.12, 0.78, 0.24, GREEN, "none", rs=0.035, z=5)
-ax.plot([EX0 + 0.255, EX0 + 0.280], [bcy + 0.005, bcy - 0.017], color="white",
-        lw=0.9, zorder=7, solid_capstyle="round")
-ax.plot([EX0 + 0.280, EX0 + 0.340], [bcy - 0.017, bcy + 0.045], color="white",
-        lw=0.9, zorder=7, solid_capstyle="round")
-text(EX0 + 0.370, bcy, "IDENTICAL", 5.6, color="white", weight="bold",
+bcy = 1.28                           # centre of the badge, and of its tick
+rbox(EX0 + 0.33, bcy - 0.115, 1.15, 0.23, GREEN, "none", rs=0.03, z=5)
+ax.plot([EX0 + 0.455, EX0 + 0.490], [bcy + 0.005, bcy - 0.030], color="white",
+        lw=1.1, zorder=7, solid_capstyle="round")
+ax.plot([EX0 + 0.490, EX0 + 0.575], [bcy - 0.030, bcy + 0.055], color="white",
+        lw=1.1, zorder=7, solid_capstyle="round")
+text(EX0 + 0.615, bcy, "IDENTICAL", FS_BOXSM, color="white", weight="bold",
      ha="left", z=7)
-text(ecx, 0.930, "Scored on $T_s$", 6.8, weight="bold")
-text(ecx, 0.765, "the same reserved", 5.3, color=SUB)
-text(ecx, 0.657, "trials, in the same", 5.3, color=SUB)
-text(ecx, 0.549, "order, in all four", 5.3, color=SUB)
-flow_arrow(GXR, EX0, CYM[0])
-flow_arrow(GXR, EX0, CYM[1])
+text(ecx, 1.02, "Scored on $T_s$", FS_BOX, weight="bold")
+text(ecx, 0.82, "the same reserved trials,", FS_BOXSM, color=SUB)
+text(ecx, 0.68, "in the same order,", FS_BOXSM, color=SUB)
+text(ecx, 0.54, "in all four conditions", FS_BOXSM, color=SUB)
+flow_arrow(GXR, EX0, CYM[0], ms=9)
+flow_arrow(GXR, EX0, CYM[1], ms=9)
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-out = ROOT / "manuscript" / "figures" / "figure1.pdf"
-out.parent.mkdir(parents=True, exist_ok=True)
-fig.savefig(out, format="pdf")
-png = ROOT / "figures" / "figure1_preview.png"
-fig.savefig(png, dpi=230)
-print("[saved]", out)
-print("[saved]", png)
+save("figure2")
