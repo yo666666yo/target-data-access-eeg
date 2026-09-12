@@ -1,209 +1,470 @@
 #!/usr/bin/env python3
-"""Figure 1: the target-access design.
+"""Figure 1: the target-data design.
 
-Left: how the trials are divided.  Each held-out subject is split once into an
-available half and a reserved test half; the source pool is split once into a
-training set and a selection set.  Both divisions are identical in every
-condition.
+Left: the two divisions of the data, drawn as two banded zones.  The held-out
+subject is cut once into an available half and a reserved test half; the source
+pool is cut once into training and checkpoint-selection trials.  Both cuts are
+made before any condition runs and are identical in all four.
 
-Right: the design matrix.  A filled marker means the condition receives that
-input.  Three of the five columns are the same in all four rows, which is the
-point of the figure: only the two procedure columns vary, and they are drawn
-larger so that the reader sees this before reading any label.
+Right: the design itself, as a 2x2 over the two procedures -- align on $C_s$,
+supervise on $C_s$.  Each cell states what that condition reads from $C_s$,
+which is what makes the caveat visible: supervision reads the same signals
+alignment does, so the grid crosses procedures, not kinds of access.  All four
+are scored on the same reserved half.
 
-Self-contained; only matplotlib is required.
-Run:  python figures/gen_fig_design.py   ->  manuscript/figures/figure1.pdf
+Stage icons are true vector graphics converted from the source SVG path data
+(arcs approximated by cubic Beziers), so the PDF is infinitely zoomable.
+Self-contained: only matplotlib is required.
+
+Run:  python figures/gen_fig_design.py  ->  manuscript/figures/figure1.pdf
 """
+import math
+import re
 
-from __future__ import annotations
-
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "figures"))
-
-import matplotlib                                   # noqa: E402
+import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt                     # noqa: E402
-from matplotlib.patches import FancyBboxPatch, Rectangle  # noqa: E402
+import matplotlib.pyplot as plt
+from matplotlib.path import Path
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, PathPatch, Rectangle
+from matplotlib.transforms import Affine2D
 
-from paper_plot_style import COLORS                 # noqa: E402
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Liberation Sans", "DejaVu Sans"]
+plt.rcParams["pdf.fonttype"] = 42
 
-SIGNAL = COLORS["skyblue"]       # target signals, label-free
-LABEL = COLORS["vermillion"]     # target labels
-SOURCE = "#5c5c5c"
-INK = "#1a1a1a"
-MUTE = "#b8b8b8"
-GREY = "#6a6a6a"
+# >>> ICON_SVG_DATA
+ICON_SVG = {
+    "preprocess": {"w": 1024.0, "h": 1024.0, "d": ["M192.333 145.826c0-44.99 35.837-81.43 79.993-81.43H752.27c44.183 0 79.994 36.44 79.994 81.43v87.936c0 59.448-25.494 115.929-69.831 154.572L620.445 512.249l141.988 123.89a205.125 205.125 0 0 1 69.831 154.572v87.959c0 44.967-35.838 81.435-79.994 81.435H272.326a79.275 79.275 0 0 1-56.573-23.855 82.164 82.164 0 0 1-23.42-57.58v-87.933c0-59.421 25.521-115.876 69.83-154.571l141.985-123.917L262.163 388.36a205.126 205.126 0 0 1-69.83-154.598v-87.936z m559.937-1.999H272.326v89.936a123.067 123.067 0 0 0 41.929 92.743l141.958 123.89a82.05 82.05 0 0 1 27.955 61.829c0 23.775-10.217 46.347-27.955 61.828L314.255 697.994a123.07 123.07 0 0 0-41.929 92.743v88.933H752.27v-88.933a123.08 123.08 0 0 0-41.927-92.743L568.38 574.051a82.036 82.036 0 0 1-27.951-61.828c0-23.776 10.212-46.347 27.951-61.829L710.342 326.53a123.07 123.07 0 0 0 41.927-92.769v-89.934z m0 1.999", "M469.347 615.039a41.241 41.241 0 0 1 60.308 0l85.336 89.591c12.185 12.826 15.845 32.103 9.241 48.817-6.604 16.737-22.141 27.643-39.419 27.643H414.157c-17.251 0-32.788-10.906-39.419-27.643a46.432 46.432 0 0 1 9.268-48.817l85.341-89.591z m0 0"]},
+    "align": {"w": 1462.0, "h": 1024.0, "d": ["M258.20947288 353.06942282h741.55596063c14.61966409 0 27.099348 5.19104004 37.40373846 15.52368213 10.41739334 10.40326789 15.58018248 22.83351381 15.58018247 37.47436499 0 14.61966409-5.16278913 27.04990928-15.58018247 37.46730263-10.30439118 10.325579-22.78407509 15.52368141-37.40373846 15.52368139H258.20947288c-14.60553864 0-27.0710971-5.1981024-37.48849044-15.52368139C210.42365363 433.11031686 205.21142577 420.68007094 205.21142577 406.06040757c0-14.64085191 5.21222786-27.0710971 15.50955667-37.47436572 10.41739334-10.33264136 22.88295181-15.52368141 37.48849044-15.52368139m0 211.85799704h953.39983222c14.60553864 0 27.0710971 5.13453896 37.48849045 15.5519323 10.2973281 10.31145354 15.50955667 22.81232527 15.50955666 37.41786463 0 14.64085191-5.21222786 27.13466127-15.50955666 37.45317718-10.41739334 10.38208008-22.88295181 15.56605776-37.48849045 15.56605703H258.20947288c-14.60553864 0-27.0710971-5.17691458-37.48849044-15.56605703C210.42365363 645.03894043 205.21142577 632.53806869 205.21142577 617.8972168c0-14.60553864 5.21222786-27.099348 15.50955667-37.41786391 10.41739334-10.41739334 22.88295181-15.5519323 37.48849044-15.55193231m0 211.88624794h741.55596063c14.61966409 0 27.099348 5.15572678 37.40373845 15.53780685 10.41739334 10.33264136 15.58018248 22.82645072 15.58018248 37.46730264 0 14.61966409-5.16278913 27.099348-15.58018248 37.40373845-10.30439118 10.41739334-22.78407509 15.56605776-37.40373845 15.56605776H258.20947288c-14.60553864 0-27.0710971-5.15572678-37.48849044-15.56605776C210.42365363 856.91812601 205.21142577 844.43844138 205.21142577 829.818778c0-14.64085191 5.21222786-27.13466127 15.50955667-37.46730263 10.41739334-10.38208008 22.88295181-15.53780686 37.48849044-15.53780685M258.20947288 141.21142578h953.39983222c14.60553864 0 27.0710971 5.16278913 37.48849045 15.5519323C1259.39512436 167.07481163 1264.60735221 179.58980881 1264.60735221 194.20947289c0 14.61966409-5.21222786 27.10641037-15.50955667 37.43198937-10.41739334 10.41033098-22.88295181 15.55899466-37.48849044 15.55899467H258.20947288c-14.60553864 0-27.0710971-5.15572678-37.48849044-15.5519323C210.42365363 221.31588327 205.21142577 208.8220739 205.21142577 194.21653526c0-14.62672646 5.21222786-27.13466127 15.50955667-37.45317718C231.13131271 146.38127801 243.60393424 141.21142578 258.20947288 141.21142578"]},
+    "normalize": {"w": 1024.0, "h": 1024.0, "d": ["M731.52 885.12h219.52V138.88h-219.52V64h219.52c40.32 0 72.96 33.28 72.96 74.88v746.88c0 40.96-32.64 74.88-72.96 74.88h-219.52v-75.52zM292.48 138.88H72.96v746.88h219.52V960H72.96C32.64 960 0 926.72 0 885.12V138.88C0 97.28 32.64 64 72.96 64h219.52v74.88z m0 224c20.48 0 36.48 16.64 36.48 37.12v373.12c0 20.48-16.64 37.12-36.48 37.12a36.224 36.224 0 0 1-36.48-37.12V400c0-20.48 16.64-37.12 36.48-37.12zM512 213.12c20.48 0 36.48 16.64 36.48 37.12v522.88c0 20.48-16.64 37.12-36.48 37.12s-36.48-16.64-36.48-37.12V250.88c0-20.48 16-37.76 36.48-37.76z m219.52 224c20.48 0 36.48 16.64 36.48 37.12v298.88c0 20.48-16.64 37.12-36.48 37.12-20.48 0-36.48-16.64-36.48-37.12V474.88c0-21.12 16-37.76 36.48-37.76z"]},
+    "split": {"w": 1024.0, "h": 1024.0, "d": ["M765.056 465.024h-73.024a10.432 10.432 0 0 0-10.432 10.432V548.48c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432V475.456a10.496 10.496 0 0 0-10.432-10.432zM765.056 898.112h-73.024a10.432 10.432 0 0 0-10.432 10.432v73.024c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432v-73.024a10.496 10.496 0 0 0-10.432-10.432zM765.056 681.536h-73.024a10.432 10.432 0 0 0-10.432 10.432v73.024c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432v-73.024a10.496 10.496 0 0 0-10.432-10.432zM765.056 248.512h-73.024a10.432 10.432 0 0 0-10.432 10.432v73.024c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432V258.944a10.496 10.496 0 0 0-10.432-10.432zM765.056 32h-73.024a10.432 10.432 0 0 0-10.432 10.432v73.024c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432V42.432A10.496 10.496 0 0 0 765.056 32zM115.456 32H42.432A10.432 10.432 0 0 0 32 42.432v939.136c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432V42.432A10.432 10.432 0 0 0 115.456 32zM332.032 32H258.944a10.432 10.432 0 0 0-10.432 10.432v939.072c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432V42.432A10.368 10.368 0 0 0 332.032 32zM548.544 32H475.456a10.432 10.432 0 0 0-10.432 10.432v939.136c0 5.76 4.672 10.432 10.432 10.432H548.48c5.76 0 10.432-4.672 10.432-10.432V42.432A10.368 10.368 0 0 0 548.544 32zM981.568 32h-73.024a10.432 10.432 0 0 0-10.432 10.432v939.072c0 5.76 4.672 10.432 10.432 10.432h73.024c5.76 0 10.432-4.672 10.432-10.432V42.432A10.432 10.432 0 0 0 981.568 32z"]},
+    "train": {"w": 1024.0, "h": 1024.0, "d": ["M830.2 638.7c-26.9 0-51.7 9.2-71.3 24.5L648.6 544.7l108.2-115.5c20 16.3 45.5 26.1 73.4 26.1 64.1 0 116-51.9 116-116s-51.9-116-116-116c-45.6 0-85.1 26.3-104 64.6L313.4 149.5c3.2-10.6 4.9-21.9 4.9-33.5 0-64.1-51.9-116-116-116s-116 51.9-116 116 51.9 116 116 116c27.6 0 52.9-9.6 72.8-25.7l208.6 224.3L313 487.9c-14.8-47.1-58.7-81.2-110.7-81.2-64.1 0-116 51.9-116 116s51.9 116 116 116c39.8 0 75-20.1 95.9-50.7l190.9 64.1-186 198.5c-20-35-57.6-58.6-100.8-58.6-64.1 0-116 51.9-116 116s51.9 116 116 116c55.7 0 102.2-39.3 113.4-91.6L721.8 796c16.7 43.6 58.9 74.7 108.4 74.7 64.1 0 116-51.9 116-116s-51.9-116-116-116z m-110.7 45.4l-153.3-51.4 52.9-56.5 100.4 107.9z m9.5-288L619.3 513.2l-58.6-63L727.8 394l1.2 2.1zM327.8 199.7l386.9 129.8c-0.3 3.3-0.4 6.6-0.4 9.9 0 4.6 0.3 9.1 0.8 13.6l-186.5 62.6-200.8-215.9z m-12.4 348.8c1.2-5.5 2.1-11.1 2.5-16.9l198-66.5 73.9 79.5-68.4 73-206-69.1z m401.7 180.1c-1.8 7.9-2.8 16.2-2.9 24.6L333.4 881.1l200.5-213.9 183.2 61.4z"]},
+    "select": {"w": 1024.0, "h": 1024.0, "d": ["M458.9 421.7l129 7.3c22.6 0.1 41 18.5 41 41L465.8 633.2c-22.6-0.1-41-18.5-41-41L418 462.6c-0.2-22.5 18.3-41.1 40.9-40.9z", "M835.7 841.3c-19.5 19.5-51.2 19.5-70.7 0L452.5 528.8c-19.5-19.5-19.5-51.2 0-70.7s51.2-19.5 70.7 0l312.5 312.5c19.5 19.5 19.5 51.2 0 70.7z", "M902 119.2c17.7 17.7 27.5 41.4 27.5 66.7v164c0 19.3-15.7 35-35 35s-35-15.7-35-35V185.8c0-6.5-2.5-12.7-7-17.2-4.6-4.5-10.8-7.1-17.2-7.1H188.9c-6.5 0-12.6 2.5-17.1 7-4.7 4.7-7.3 11-7.3 17.4v652.3c0 13.4 10.9 24.3 24.4 24.3h164.6c19.3 0 35 15.7 35 35s-15.7 35-35 35H188.9c-52.1 0-94.4-42.3-94.4-94.3V185.9c0-25.1 9.8-48.7 27.5-66.6 17.8-17.9 41.5-27.8 66.9-27.8h646.4c24.8 0 49.1 10.1 66.7 27.7z"]},
+}
+# <<< ICON_SVG_DATA
 
-TITLE_Y = 0.935                  # figure coords, shared by both panel titles
-
-# condition -> (name, gloss, uses alignment, uses supervision)
-CONDITIONS = [
-    ("SRC",    "uses neither",        False, False),
-    ("EA",     "alignment only",      True,  False),
-    ("SUP",    "supervision only",    False, True),
-    ("EA+SUP", "both procedures",     True,  True),
-]
-
-# The two middle columns are procedures, not permissions: supervised
-# training reads the available trials' signals as well as their labels, so
-# this is not an orthogonal signals-versus-labels split.
-COLUMNS = [
-    ("source\ntraining", SOURCE, False),
-    ("align on\n$C_s$", SIGNAL, True),
-    ("supervise\non $C_s$", LABEL, True),
-    ("source\nselection", SOURCE, False),
-    ("scored on\n$T_s$", INK, False),
-]
+# ---------------------------------------------------------------- SVG parsing
+_NUM = r"[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?"
+_TOKEN = re.compile(r"([MmLlHhVvCcSsAaZz])|(" + _NUM + r")")
 
 
-def bar(ax, x, y, w, h, fc, ec, label, pct, fs=7.0):
-    """One segment of a division bar, with its share printed below it."""
-
-    ax.add_patch(Rectangle((x, y), w, h, facecolor=fc, edgecolor=ec,
-                           lw=0.9, zorder=2))
-    ax.text(x + w / 2, y + h / 2, label, ha="center", va="center",
-            fontsize=fs, color=INK, zorder=3)
-    ax.text(x + w / 2, y - 0.052, pct, ha="center", va="center",
-            fontsize=fs - 1.4, color=GREY, zorder=3)
+def _tokenize(d):
+    out = []
+    for m in _TOKEN.finditer(d):
+        out.append(m.group(1) if m.group(1) else float(m.group(2)))
+    return out
 
 
-def draw_split(ax):
-    """Left panel: the two fixed divisions of the data."""
+def _arc_cubics(x0, y0, rx, ry, phi_deg, laf, sf, x1, y1):
+    """SVG F.6.5 endpoint->centre arc conversion, cubic Bezier approximation."""
+    if (x0, y0) == (x1, y1):
+        return []
+    if rx == 0 or ry == 0:
+        return [(x0, y0, x1, y1, x1, y1)]
+    phi = math.radians(phi_deg % 360.0)
+    cp, sp = math.cos(phi), math.sin(phi)
+    dx, dy = (x0 - x1) / 2.0, (y0 - y1) / 2.0
+    x1p = cp * dx + sp * dy
+    y1p = -sp * dx + cp * dy
+    rx, ry = abs(rx), abs(ry)
+    lam = x1p * x1p / (rx * rx) + y1p * y1p / (ry * ry)
+    if lam > 1.0:
+        s = math.sqrt(lam)
+        rx *= s
+        ry *= s
+    num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p
+    den = rx * rx * y1p * y1p + ry * ry * x1p * x1p
+    co = math.sqrt(max(0.0, num / den)) if den else 0.0
+    if bool(laf) == bool(sf):
+        co = -co
+    cxp = co * rx * y1p / ry
+    cyp = -co * ry * x1p / rx
+    cx = cp * cxp - sp * cyp + (x0 + x1) / 2.0
+    cy = sp * cxp + cp * cyp + (y0 + y1) / 2.0
 
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.axis("off")
+    def _ang(ux, uy, vx, vy):
+        dd = math.hypot(ux, uy) * math.hypot(vx, vy)
+        cc = max(-1.0, min(1.0, (ux * vx + uy * vy) / dd))
+        a = math.acos(cc)
+        return -a if ux * vy - uy * vx < 0 else a
 
-    bar_w, bar_h = 0.80, 0.150
-    note_x = 0.845
+    th1 = _ang(1.0, 0.0, (x1p - cxp) / rx, (y1p - cyp) / ry)
+    dth = _ang((x1p - cxp) / rx, (y1p - cyp) / ry,
+               (-x1p - cxp) / rx, (-y1p - cyp) / ry)
+    if not sf and dth > 0:
+        dth -= 2.0 * math.pi
+    elif sf and dth < 0:
+        dth += 2.0 * math.pi
+    n = max(1, int(math.ceil(abs(dth) / (math.pi / 2.0))))
+    seg = dth / n
+    alpha = 4.0 / 3.0 * math.tan(seg / 4.0)
 
-    # --- source pool -------------------------------------------------------
-    ax.text(0.0, 0.855, "source pool  ($N{-}1$ subjects)", fontsize=7.2,
-            color=INK, va="center")
-    y0 = 0.650
-    bar(ax, 0.0, y0, bar_w * 0.80, bar_h, "#ededed", SOURCE, "training", "80%")
-    bar(ax, bar_w * 0.80, y0, bar_w * 0.20, bar_h, "#f8f8f8", SOURCE,
-        "sel.", "20%")
-    ax.text(note_x, y0 + bar_h / 2, "identical in\nall conditions",
-            fontsize=6.2, color=GREY, va="center", ha="left", linespacing=1.4)
+    def _pt(t):
+        ct, st = math.cos(t), math.sin(t)
+        return (cx + rx * cp * ct - ry * sp * st,
+                cy + rx * sp * ct + ry * cp * st)
 
-    # --- held-out subject --------------------------------------------------
-    ax.text(0.0, 0.425, "held-out subject $s$", fontsize=7.2, color=INK,
-            va="center")
-    y1 = 0.220
-    bar(ax, 0.0, y1, bar_w / 2, bar_h, "#ffffff", INK, "available $C_s$", "50%")
-    bar(ax, bar_w / 2, y1, bar_w / 2, bar_h, "#ededed", INK,
-        "reserved $T_s$", "50%")
-    ax.text(note_x, y1 + bar_h / 2, "stratified,\nseeded per subject",
-            fontsize=6.2, color=GREY, va="center", ha="left", linespacing=1.4)
+    def _dpt(t):
+        ct, st = math.cos(t), math.sin(t)
+        return (-rx * cp * st - ry * sp * ct,
+                -rx * sp * st + ry * cp * ct)
 
-    # --- the two roles, called out under the held-out bar ------------------
-    # Clear of the percentage labels above them, which previously sat almost on
-    # top of these bands.
-    band_y = y1 - 0.108
-    ax.plot([0.004, bar_w / 2 - 0.004], [band_y, band_y], color=SIGNAL,
-            lw=2.4, solid_capstyle="butt", zorder=3)
-    ax.text(bar_w / 4, band_y - 0.042, "the only material a condition may use",
-            fontsize=6.2, color=SIGNAL, ha="center", va="top")
-    ax.plot([bar_w / 2 + 0.004, bar_w - 0.004], [band_y, band_y], color=INK,
-            lw=2.4, solid_capstyle="butt", zorder=3)
-    ax.text(bar_w * 0.75, band_y - 0.042, "scored, never touched",
-            fontsize=6.2, color=INK, ha="center", va="top")
+    out = []
+    t0 = th1
+    for _ in range(n):
+        t1 = t0 + seg
+        e0, e1 = _pt(t0), _pt(t1)
+        d0, d1 = _dpt(t0), _dpt(t1)
+        out.append((e0[0] + alpha * d0[0], e0[1] + alpha * d0[1],
+                    e1[0] - alpha * d1[0], e1[1] - alpha * d1[1],
+                    e1[0], e1[1]))
+        t0 = t1
+    return out
 
 
-def draw_matrix(ax):
-    """Right panel: which inputs each condition receives."""
+def _parse_d(d, vb_h):
+    """Parse one SVG path string; return (verts, codes), y flipped to y-up."""
+    toks = _tokenize(d)
+    verts, codes = [], []
+    i = 0
+    cx = cy = 0.0
+    sx0 = sy0 = 0.0
+    last_c2 = None
+    cmd = None
 
-    n_rows, n_cols = len(CONDITIONS), len(COLUMNS)
-    label_x = -1.62
-    rule_x0, rule_x1 = label_x, n_cols - 0.55
-    ax.set_xlim(label_x - 0.07, n_cols - 0.48)
-    ax.set_ylim(-0.92, n_rows + 0.10)
-    ax.axis("off")
-    ax.invert_yaxis()
+    def _num():
+        nonlocal i
+        v = toks[i]
+        i += 1
+        return v
 
-    # Highlight the two columns that vary, behind everything else.  The block
-    # now starts below the spanning label and stops level with the last row
-    # instead of ending in mid-air.
-    top, bottom = -0.30, n_rows - 0.06
-    for j, (_head, colour, varies) in enumerate(COLUMNS):
-        if not varies:
-            continue
-        ax.add_patch(FancyBboxPatch(
-            (j - 0.40, top), 0.80, bottom - top,
-            boxstyle="round,pad=0,rounding_size=0.06",
-            facecolor=colour, alpha=0.07, edgecolor="none", zorder=1))
-    ax.text(1.5, -0.52, "the two procedures", ha="center", va="center",
-            fontsize=6.4, color=GREY, zorder=3)
-
-    for j, (head, colour, varies) in enumerate(COLUMNS):
-        ax.text(j, -0.08, head, ha="center", va="center", fontsize=6.6,
-                color=colour if varies else GREY, linespacing=1.35, zorder=3)
-
-    ax.plot([rule_x0, rule_x1], [0.30, 0.30], color="#c9c9c9", lw=0.8,
-            zorder=2)
-
-    # Markers are drawn with scatter so they stay circular whatever the axes
-    # aspect ratio turns out to be.  The three fixed columns are drawn smaller:
-    # the eye should land on the two that change before it reads a header.
-    on_pts, off_pts = {"x": [], "y": [], "c": [], "s": []}, {"x": [], "y": [],
-                                                            "s": []}
-    for i, (name, gloss, sig, lab) in enumerate(CONDITIONS):
-        y = i + 0.78
-        ax.text(label_x, y - 0.10, name, ha="left", va="center", fontsize=7.2,
-                fontweight="bold", color=INK, zorder=3)
-        ax.text(label_x, y + 0.19, gloss, ha="left", va="center", fontsize=6.1,
-                color=GREY, zorder=3)
-        for j, on in enumerate([True, sig, lab, True, True]):
-            size = 66 if COLUMNS[j][2] else 46
-            if on:
-                on_pts["x"].append(j)
-                on_pts["y"].append(y)
-                on_pts["c"].append(COLUMNS[j][1])
-                on_pts["s"].append(size)
+    while i < len(toks):
+        if isinstance(toks[i], str):
+            cmd = toks[i]
+            i += 1
+        rel = cmd.islower()
+        c = cmd.upper()
+        if c == "M":
+            x, y = _num(), _num()
+            if rel:
+                x += cx
+                y += cy
+            cx, cy = x, y
+            sx0, sy0 = cx, cy
+            verts.append((cx, vb_h - cy))
+            codes.append(Path.MOVETO)
+            cmd = "l" if rel else "L"  # implicit repeats become lineto
+        elif c in ("L", "H", "V"):
+            if c == "L":
+                x, y = _num(), _num()
+                if rel:
+                    x += cx
+                    y += cy
+                cx, cy = x, y
+            elif c == "H":
+                x = _num()
+                cx = cx + x if rel else x
             else:
-                off_pts["x"].append(j)
-                off_pts["y"].append(y)
-                off_pts["s"].append(size)
-        if i < n_rows - 1:
-            ax.plot([rule_x0, rule_x1], [i + 1.30, i + 1.30],
-                    color="#ededed", lw=0.7, zorder=2)
+                y = _num()
+                cy = cy + y if rel else y
+            verts.append((cx, vb_h - cy))
+            codes.append(Path.LINETO)
+        elif c in ("C", "S"):
+            if c == "C":
+                x1, y1, x2, y2, x, y = (_num() for _ in range(6))
+                if rel:
+                    x1 += cx
+                    y1 += cy
+                    x2 += cx
+                    y2 += cy
+                    x += cx
+                    y += cy
+            else:
+                x2, y2, x, y = (_num() for _ in range(4))
+                if rel:
+                    x2 += cx
+                    y2 += cy
+                    x += cx
+                    y += cy
+                if last_c2 is not None:
+                    x1, y1 = 2 * cx - last_c2[0], 2 * cy - last_c2[1]
+                else:
+                    x1, y1 = cx, cy
+            verts += [(x1, vb_h - y1), (x2, vb_h - y2), (x, vb_h - y)]
+            codes += [Path.CURVE4] * 3
+            cx, cy = x, y
+            continue
+        elif c == "A":
+            rx, ry, phi, laf, sf, x, y = (_num() for _ in range(7))
+            if rel:
+                x += cx
+                y += cy
+            for c1x, c1y, c2x, c2y, ex, ey in _arc_cubics(
+                    cx, cy, rx, ry, phi, laf, sf, x, y):
+                verts += [(c1x, vb_h - c1y), (c2x, vb_h - c2y), (ex, vb_h - ey)]
+                codes += [Path.CURVE4] * 3
+            cx, cy = x, y
+        elif c == "Z":
+            verts.append((sx0, vb_h - sy0))
+            codes.append(Path.CLOSEPOLY)
+            cx, cy = sx0, sy0
+        else:
+            raise ValueError(f"unsupported SVG command: {cmd}")
+        last_c2 = None
+    return verts, codes
 
-    ax.scatter(off_pts["x"], off_pts["y"], s=off_pts["s"], facecolors="white",
-               edgecolors=MUTE, linewidths=0.9, zorder=4)
-    ax.scatter(on_pts["x"], on_pts["y"], s=on_pts["s"], facecolors=on_pts["c"],
-               edgecolors=on_pts["c"], linewidths=0.9, zorder=4)
+
+def _icon_path(entry):
+    verts, codes = [], []
+    for d in entry["d"]:
+        v, c = _parse_d(d, entry["h"])
+        verts += v
+        codes += c
+    return Path(verts, codes)
 
 
-def main():
-    fig = plt.figure(figsize=(7.15, 2.05))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.0, 0.95], wspace=0.10,
-                          left=0.012, right=0.988, top=0.86, bottom=0.04)
-    ax_l = fig.add_subplot(gs[0, 0])
-    ax_r = fig.add_subplot(gs[0, 1])
-    draw_split(ax_l)
-    draw_matrix(ax_r)
-
-    # Both titles are placed in figure coordinates at one shared height, each
-    # at its own panel's left edge.  Setting them inside the axes let the two
-    # halves drift apart, since the panels do not share a data range.
-    for ax, text in ((ax_l, "How the trials are divided"),
-                     (ax_r, "What each condition does with $C_s$")):
-        fig.text(ax.get_position().x0, TITLE_Y, text, fontsize=8.2,
-                 fontweight="bold", color=INK, va="center", ha="left")
-
-    out = ROOT / "manuscript" / "figures" / "figure1.pdf"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out)
-    png = ROOT / "figures" / "figure1_preview.png"
-    fig.savefig(png, dpi=230)
-    print("[saved]", out)
-    print("[saved]", png)
-    return 0
+ICON_PATHS = {n: (e["w"], e["h"], _icon_path(e)) for n, e in ICON_SVG.items()}
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+import pathlib                                       # noqa: E402
+from matplotlib.colors import to_rgb                 # noqa: E402
+
+
+# ------------------------------------------------------------------- drawing
+W, H = 7.16, 1.92
+fig = plt.figure(figsize=(W, H))
+ax = fig.add_axes([0, 0, 1, 1])
+ax.set_xlim(0, W)
+ax.set_ylim(0, H)
+ax.axis("off")
+
+INK, SUB = "#1a1a1a", "#4d4d4d"
+FLOW, GRAY, BORDER = "#3d3d3d", "#68727e", "#9aa0a6"
+SIG = "#2a8c82"                 # signals read from C_s, no labels
+LAB = "#b04a3a"                 # labels read from C_s
+NEUT = "#7b8590"                # nothing read from C_s
+GREEN = "#3a7d44"
+YEL_BG, YEL_DK, YEL_EC = "#fbf6ed", "#8f6a10", "#e6dabe"
+GRN_BG, GRN_DK, GRN_EC = "#eef5ee", "#2f6a38", "#d3e3d4"
+
+
+def tint(colour, a):
+    """The colour laid over white at fraction ``a`` -- a printable pale fill."""
+    r, g, b = to_rgb(colour)
+    return (1 - a + a * r, 1 - a + a * g, 1 - a + a * b)
+
+
+def rbox(x, y, w, h, fc, ec, lw=1.0, rs=0.045, ls="-", z=2):
+    p = FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={rs}",
+                       fc=fc, ec=ec, lw=lw, linestyle=ls, zorder=z)
+    ax.add_patch(p)
+    return p
+
+
+def text(x, y, s, size, color=INK, weight="normal", ha="center", va="center",
+         z=6):
+    ax.text(x, y, s, fontsize=size, color=color, fontweight=weight,
+            ha=ha, va=va, zorder=z)
+
+
+def text_width(s, size, weight="normal"):
+    """Rendered width of a string in data units (1 unit = 1 inch)."""
+    t = ax.text(0, -100, s, fontsize=size, fontweight=weight)
+    bb = t.get_window_extent(fig.canvas.get_renderer())
+    t.remove()
+    return bb.width / fig.dpi
+
+
+def icon_v(name, cx, cy, half_h, color, z=8):
+    """Draw a vector icon centred at (cx, cy); all icons fit one height."""
+    vbw, vbh, path = ICON_PATHS[name]
+    s = 2 * half_h / vbh
+    hw = half_h * vbw / vbh
+    t = Affine2D().scale(s).translate(cx - hw, cy - half_h) + ax.transData
+    ax.add_patch(PathPatch(path, transform=t, fc=color, ec="none", zorder=z))
+
+
+def icon_group_width(name, label, fs, ih, gap=0.05):
+    vbw, vbh, _ = ICON_PATHS[name]
+    return 2 * ih * vbw / vbh + gap + text_width(label, fs, "bold")
+
+
+def icon_title(x, y, name, label, colour, fs=6.0, ih=0.058, gap=0.05):
+    """Icon-plus-bold-title group, laid out left to right from x."""
+    vbw, vbh, _ = ICON_PATHS[name]
+    ihw = ih * vbw / vbh
+    icon_v(name, x + ihw, y, ih, colour)
+    text(x + 2 * ihw + gap, y, label, fs, color=colour, weight="bold",
+         ha="left")
+
+
+def flow_arrow(x1, x2, y, color=FLOW, ms=8, lw=1.2):
+    ax.add_patch(FancyArrowPatch((x1, y), (x2, y), arrowstyle="-|>",
+                                 mutation_scale=ms, color=color, lw=lw,
+                                 shrinkA=0.5, shrinkB=0.5, zorder=4))
+
+
+def pill(x, y, label, colour, fs=5.2, pad=0.055, h=0.132):
+    """A small outlined chip; the unit in which access to C_s is stated."""
+    w = text_width(label, fs) + 2 * pad
+    rbox(x, y - h / 2, w, h, tint(colour, 0.14), colour, lw=0.7, rs=0.042, z=5)
+    text(x + w / 2, y, label, fs, color=colour, z=7)
+    return w
+
+
+# ---------------- geometry ----------------
+# The figure is one \textwidth wide and no taller than the panel it replaces:
+# the paper's four content pages have no slack, and a figure that costs an
+# extra half inch pushes the discussion onto the references page.
+LX0, LX1 = 0.06, 2.34               # left: how the trials are divided
+GX0 = 2.44                          # middle: the 2x2 over the two procedures
+EX0, EX1 = 6.00, 7.10               # right: what everything is scored on
+BARX0, BARX1 = LX0 + 0.11, LX1 - 0.11
+BARW = BARX1 - BARX0
+BANDH = 0.86                        # the two zone bands on the left
+BAY0 = 1.06                         # held-out-subject band bottom
+BBY0 = 0.04                         # source-pool band bottom
+
+
+def zone(y0, title_icon, title, sub, colour, bg, ec):
+    """One banded zone: tinted field, icon-and-title, one line of detail."""
+    rbox(LX0, y0, LX1 - LX0, BANDH, bg, ec, lw=0.8, rs=0.07, z=0)
+    icon_title(LX0 + 0.09, y0 + 0.740, title_icon, title, colour)
+    text(LX0 + 0.09, y0 + 0.625, sub, 5.2, color=colour, ha="left")
+
+
+def divide(y0, left_frac, left_fill, right_fill, ec, left_lab, right_lab,
+           left_fs=6.3, right_fs=6.3):
+    """The division bar inside a zone, drawn as two abutting boxes."""
+    bh, by = 0.28, y0 + 0.225
+    rbox(BARX0, by, BARW * left_frac, bh, left_fill, ec, lw=1.0, rs=0.035, z=2)
+    rbox(BARX0 + BARW * left_frac, by, BARW * (1 - left_frac), bh, right_fill,
+         ec, lw=1.0, rs=0.035, z=2)
+    text(BARX0 + BARW * left_frac / 2, by + bh / 2, left_lab, left_fs,
+         weight="bold")
+    text(BARX0 + BARW * (1 + left_frac) / 2, by + bh / 2, right_lab, right_fs,
+         weight="bold")
+
+
+# ---------------- left panel: the two fixed divisions ----------------
+zone(BAY0, "split", "HELD-OUT SUBJECT $s$",
+     "cut once, stratified — 288 / 80 / 45 trials each half",
+     YEL_DK, YEL_BG, YEL_EC)
+divide(BAY0, 0.5, "white", "#ededed", INK, "available $C_s$", "reserved $T_s$")
+text(BARX0 + BARW / 4, BAY0 + 0.105, "all a condition may use", 5.2, color=SUB)
+text(BARX0 + BARW * 0.75, BAY0 + 0.105, "scored, never trained on", 5.2,
+     color=GREEN)
+
+zone(BBY0, "select", "SOURCE POOL — $N{-}1$ SUBJECTS",
+     "every trial used, in every condition", GRN_DK, GRN_BG, GRN_EC)
+divide(BBY0, 0.8, "white", "#ededed", GRAY, "training  80%", "sel. 20%",
+       right_fs=5.6)
+text(BARX0 + BARW / 2, BBY0 + 0.105,
+     "one stratified cut, fixed across conditions", 5.2, color=SUB)
+
+# ---------------- middle: the 2x2 over the two procedures ----------------
+CW, CH = 1.26, 0.60
+CX = [3.20, 4.49]                   # cell left edges: not aligned / aligned
+CY = [1.015, 0.295]                 # cell bottoms: not supervised / supervised
+CXM = [x + CW / 2 for x in CX]
+CYM = [y + CH / 2 for y in CY]
+GXR = CX[1] + CW + 0.07             # right edge of the banded grid
+TICKR = CX[0] - 0.10                # row labels are right-aligned to here
+
+# Each factor's "on" half is a tinted band running the length of its row or
+# column, so which cell has which procedure switched on is visible before any
+# label is read.  The fills are translucent rather than opaque so that the
+# square both bands cross -- EA+SUP -- shows both tints instead of whichever
+# band happened to be drawn second.
+rbox(CX[1] - 0.07, CY[1] - 0.07, GXR - CX[1] + 0.07, 1.775 - CY[1] + 0.07,
+     (*to_rgb(SIG), 0.085), (*to_rgb(SIG), 0.36), lw=0.8, rs=0.07, z=0)
+rbox(GX0, CY[1] - 0.07, GXR - GX0, CH + 0.14, (*to_rgb(LAB), 0.085),
+     (*to_rgb(LAB), 0.36), lw=0.8, rs=0.07, z=0)
+
+# The corner block names the row factor and the header above the columns names
+# the column factor; between them they define the grid without a caption.  The
+# corner block is set flush right with the row labels, as one label column.
+_sw = icon_group_width("train", "supervise", 6.3, 0.062)
+icon_title(TICKR - _sw, 1.865, "train", "supervise", LAB, fs=6.3, ih=0.062)
+text(TICKR, 1.760, "on $C_s$", 6.3, color=LAB, weight="bold", ha="right")
+
+_hw = icon_group_width("align", "align on $C_s$", 6.6, 0.058)
+icon_title((CXM[0] + CXM[1]) / 2 - _hw / 2, 1.865, "align", "align on $C_s$",
+           SIG, fs=6.6, ih=0.058)
+
+for j, (lab, on) in enumerate([("not aligned", False), ("aligned", True)]):
+    text(CXM[j], 1.700, lab, 6.0, color=SIG if on else GRAY,
+         weight="bold" if on else "normal", z=5)
+
+for i, (lab, on) in enumerate([("not supervised", False),
+                               ("supervised", True)]):
+    text(TICKR, CYM[i], lab, 6.0, color=LAB if on else GRAY,
+         weight="bold" if on else "normal", ha="right", z=5)
+
+# (row, col) -> name, badge colours, what it reads from C_s, what it does
+CELLS = {
+    (0, 0): ("SRC", (NEUT, None), [("none", NEUT)],
+             "trained on source subjects only"),
+    (0, 1): ("EA", (SIG, None), [("signals", SIG)],
+             "whitener fitted on $C_s$, frozen"),
+    (1, 0): ("SUP", (LAB, None), [("signals", SIG), ("labels", LAB)],
+             "$C_s$ joins the training set"),
+    (1, 1): ("EA+SUP", (SIG, LAB), [("signals", SIG), ("labels", LAB)],
+             "both, on the same $C_s$"),
+}
+
+for (i, j), (name, (c1, c2), reads, gloss) in CELLS.items():
+    x0, y0 = CX[j], CY[i]
+    rbox(x0, y0, CW, CH, "white", BORDER, lw=0.9, rs=0.05, z=2)
+    ix = x0 + 0.075
+
+    bw = text_width(name, 6.4, "bold") + 0.16
+    badge = rbox(ix, y0 + 0.350, bw, 0.175, c1, "none", rs=0.042, z=5)
+    if c2 is not None:
+        # EA+SUP is one badge in two colours: the condition is both procedures,
+        # and a single flat colour would invent a fifth category for it.
+        half = Rectangle((ix + bw / 2, y0 + 0.350), bw / 2, 0.175, fc=c2,
+                         ec="none", zorder=6)
+        ax.add_patch(half)
+        half.set_clip_path(badge)
+    text(ix + bw / 2, y0 + 0.4375, name, 6.4, color="white", weight="bold",
+         z=7)
+
+    px = ix
+    text(px, y0 + 0.235, "reads:", 5.2, color=GRAY, ha="left")
+    px += text_width("reads:", 5.2) + 0.045
+    for lbl, colour in reads:
+        px += pill(px, y0 + 0.235, lbl, colour) + 0.035
+
+    text(ix, y0 + 0.098, gloss, 5.3, color=SUB, ha="left")
+
+text((GX0 + GXR) / 2, 0.105,
+     "supervising reads the same signals alignment does — the grid "
+     "crosses procedures, not kinds of access", 5.4, color=SUB)
+
+# ---------------- right: the single scoring rule ----------------
+rbox(EX0, CY[1], EX1 - EX0, CY[0] + CH - CY[1], "white", GREEN, lw=1.3, z=2)
+ecx = (EX0 + EX1) / 2
+bcy = 1.275                          # centre of the badge, and of its tick
+rbox(EX0 + 0.16, bcy - 0.12, 0.78, 0.24, GREEN, "none", rs=0.035, z=5)
+ax.plot([EX0 + 0.255, EX0 + 0.280], [bcy + 0.005, bcy - 0.017], color="white",
+        lw=0.9, zorder=7, solid_capstyle="round")
+ax.plot([EX0 + 0.280, EX0 + 0.340], [bcy - 0.017, bcy + 0.045], color="white",
+        lw=0.9, zorder=7, solid_capstyle="round")
+text(EX0 + 0.370, bcy, "IDENTICAL", 5.6, color="white", weight="bold",
+     ha="left", z=7)
+text(ecx, 0.930, "Scored on $T_s$", 6.8, weight="bold")
+text(ecx, 0.765, "the same reserved", 5.3, color=SUB)
+text(ecx, 0.657, "trials, in the same", 5.3, color=SUB)
+text(ecx, 0.549, "order, in all four", 5.3, color=SUB)
+flow_arrow(GXR, EX0, CYM[0])
+flow_arrow(GXR, EX0, CYM[1])
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+out = ROOT / "manuscript" / "figures" / "figure1.pdf"
+out.parent.mkdir(parents=True, exist_ok=True)
+fig.savefig(out, format="pdf")
+png = ROOT / "figures" / "figure1_preview.png"
+fig.savefig(png, dpi=230)
+print("[saved]", out)
+print("[saved]", png)

@@ -4,7 +4,7 @@
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/figure1.pdf}
-    \caption{Left: the two divisions of the data, both made once and identical in every condition. Right: what each condition is permitted to do with the held-out subject's available half. Only the two shaded columns vary; the source training set, the selection set and the scored trials are the same throughout, as are the samples drawn per epoch and the expected target share of a batch. Supervised training necessarily reads the available trials' signals as well as their labels, so the two columns are two \emph{procedures}, not two independent kinds of access.}
+    \caption{Left: the two divisions of the data, each made once and identical in every condition. Right: the four conditions as a $2\times2$ over the two procedures, with what each reads from the held-out subject's available half $C_s$. Supervised training necessarily reads those trials' signals as well as their labels, so the grid crosses two \emph{procedures}, not two independent kinds of access. Everything else is held fixed: the source training set, the selection set, the samples drawn per epoch and the expected target share of a batch, and all four are scored on the same reserved trials in the same order.}
     \label{fig:design}
 \end{figure*}
 
