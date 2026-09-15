@@ -3,6 +3,8 @@
 % hidelinks: the review PDF should carry no coloured frames around citations
 % and URLs, which is what plain hyperref draws.
 \usepackage[hidelinks]{hyperref}
+% Typewriter is reserved for code identifiers, so URLs set in the body font.
+\urlstyle{same}
 
 \makeatletter
 % spconf restyles only numbered headings: it redefines \@sect and leaves
@@ -18,19 +20,19 @@
 
 \title{TARGET-DATA ACCESS AND AGGREGATION EFFECTS IN CROSS-SUBJECT EEG EVALUATION}
 
-\name{Chenghao Li$^{\star}$ \qquad Haochen Zhou$^{\dagger}$ \qquad Chunfeng Yang$^{\ddagger}$}
+\name{Chenghao Li$^{\star}$ \quad Haochen Zhou$^{\dagger}$ \quad Chenyang Liu$^{\ddagger}$ \quad Chunfeng Yang$^{\ddagger}$}
 \address{%
 $^{\star}$College of Software Engineering, Southeast University, Nanjing, China \\
 $^{\dagger}$School of Artificial Intelligence, Southeast University, Nanjing, China \\
 $^{\ddagger}$School of Computer Science and Engineering, Southeast University, Nanjing, China \\
-\texttt{\{yo666666yo, 213241737, chunfeng.yang\}@seu.edu.cn}}
+\{yo666666yo, 213241737, ChenyangLiu, chunfeng.yang\}@seu.edu.cn}
 
 \begin{document}
 \ninept
 \maketitle
 
 \begin{abstract}
-Cross-subject EEG decoders are compared across protocols that use the target subject differently, and the gaps between them are read as the value of that access. That reading holds only if everything else is matched. We divide each held-out subject's trials into an available half and a reserved half, score every condition on the same reserved half, and cross two procedures: Euclidean Alignment and supervised training on the available half. The source partition, epoch budget, target sampling rate and scored trials are fixed and checked against the realized indices. On three motor-imagery datasets spanning 9 to 105 subjects both procedures help, but their ordering reverses and no interaction replicates; capping the calibration set rules out its size as the cause. A second control, regrouping identical predictions without retraining, shows a reported between-subject spread also tracks the trials per subject. Neither what target access buys nor what a spread means is portable across datasets.
+Cross-subject EEG decoders are compared across protocols that use the target subject differently, and the gaps are read as the value of that access. That reading holds only if everything else is matched. We divide each held-out subject's trials into an available half and a reserved half, score every condition on the reserved half, and cross two procedures: Euclidean Alignment and supervised training on the available half. The source partition, epoch budget, sampling rate and scored trials are fixed and checked against the realized indices. On three motor-imagery datasets spanning 9 to 105 subjects both procedures help, but their ordering reverses and no interaction replicates; capping the calibration set shows that its size alone does not explain the reversal. A second control, regrouping identical predictions without retraining, shows a reported between-subject spread tracks the trials per subject. Neither what target access buys nor what a spread means can be assumed portable across datasets. Code, logs and per-trial predictions: \url{https://github.com/yo666666yo/target-data-access-eeg}.
 \end{abstract}
 
 \begin{keywords}
@@ -47,10 +49,10 @@ Brain--computer interfaces, cross-subject evaluation, Euclidean alignment, calib
 
 % Permitted on the optional fifth page alongside references and funding notes.
 \section*{Compliance with Ethical Standards}
-This work is a secondary analysis of three public motor-imagery EEG corpora---BCI Competition IV
-dataset 2a, BNCI2014-002 and the PhysioNet EEG Motor Movement/Imagery database---each released by
-its originators for open research use with participant consent and ethical approval obtained by
-the original investigators. No new data were recorded and no human participants were involved in
+This work is a secondary analysis of three public motor-imagery EEG corpora: BCI Competition IV
+dataset 2a, BNCI2014-002 and the PhysioNet EEG Motor Movement/Imagery database. Each was
+released by its originators for open research use with participant consent and ethical approval
+obtained by the original investigators. No new data were recorded and no human participants were involved in
 this study, so no additional ethical approval was required. The authors declare no conflict of
 interest.
 

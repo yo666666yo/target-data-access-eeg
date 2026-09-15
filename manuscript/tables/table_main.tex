@@ -1,26 +1,22 @@
 \begin{table*}[t]
 \centering
-\caption{Effect of each procedure against the source-only reference under the controls of Section~\ref{sec:controls}. Differences are paired within subject and averaged over three runs; the per-run column gives the same difference within each run. Intervals are descriptive percentile bootstrap over subjects, not multiplicity-adjusted; $p$ is Holm-corrected within each dataset and is followed by the number of subjects helped, which distinguishes arms at the permutation floor. SD is the between-subject standard deviation of run-averaged per-subject accuracy---a different pooling order from Section~\ref{sec:results}, which pools variances within runs. \textsc{sel} and \textsc{pool} sit off the grid and are quoted in the text.}
+\caption{Effect of each procedure against its own source-only reference, under the controls of Section~\ref{sec:controls}. Differences are paired within subject and averaged over three runs. Intervals are descriptive percentile bootstrap over subjects, not multiplicity-adjusted; $p$ is Holm-corrected within each dataset, followed by the number of subjects helped, which distinguishes arms at the permutation floor. Per-run values and between-subject standard deviations are in the repository; the two arms off the grid are quoted in the text.}
 \label{tab:main}
 \small
-\begin{tabular}{llccccc}
+\begin{tabular}{@{}llccc@{}}
 \toprule
-Condition & Uses $C_s$ to & $\Delta$ accuracy (pp) [95\% CI] & per run (pp) & subject SD & SD ratio [95\% CI] & $p$ (improved) \\
+& & BCI IV 2a & BNCI2014-002 & PhysionetMI \\
 \midrule
-\multicolumn{7}{l}{\textit{BCI IV 2a} ($n=9$ subjects; source-only accuracy $0.450$, between-subject SD $0.175$)} \\
-\textsc{ea} & align & $+1.58$ [$+0.17$, $+2.98$] & $+0.7$ $+2.1$ $+1.9$ & $0.180$ & $1.03$ [$0.94$, $1.13$] & 0.176 (7/9) \\
-\textsc{sup} & supervise & $+9.45$ [$+5.88$, $+12.81$] & $+9.0$ $+9.1$ $+10.3$ & $0.196$ & $1.12$ [$0.88$, $1.36$] & 0.019 (9/9) \\
-\textsc{ea+sup} & align + supervise & $+13.66$ [$+9.53$, $+17.44$] & $+12.2$ $+13.5$ $+15.3$ & $0.199$ & $1.14$ [$0.84$, $1.36$] & 0.019 (9/9) \\
+\multicolumn{2}{@{}l}{Source-only accuracy} & $0.450$ & $0.687$ & $0.444$ \\
 \midrule
-\multicolumn{7}{l}{\textit{BNCI2014-002} ($n=14$ subjects; source-only accuracy $0.687$, between-subject SD $0.115$)} \\
-\textsc{ea} & align & $+8.07$ [$+4.37$, $+11.96$] & $+6.3$ $+7.5$ $+10.4$ & $0.120$ & $1.04$ [$0.78$, $1.49$] & 0.005 (12/14) \\
-\textsc{sup} & supervise & $+6.52$ [$+3.18$, $+10.27$] & $+5.9$ $+3.8$ $+9.8$ & $0.136$ & $1.18$ [$0.95$, $1.64$] & 0.005 (12/14) \\
-\textsc{ea+sup} & align + supervise & $+11.13$ [$+6.34$, $+16.16$] & $+10.8$ $+10.4$ $+12.2$ & $0.118$ & $1.02$ [$0.68$, $1.59$] & 0.002 (13/14) \\
+EA & $\Delta$ accuracy (pp) & $+1.58$ [$+0.17$, $+2.98$] & $+8.07$ [$+4.37$, $+11.96$] & $+9.12$ [$+7.40$, $+10.81$] \\
+& $p$ (improved) & $0.176$ (7/9) & $0.005$ (12/14) & $<0.001$ (93/105) \\
 \midrule
-\multicolumn{7}{l}{\textit{PhysionetMI} ($n=105$ subjects; source-only accuracy $0.444$, between-subject SD $0.124$)} \\
-\textsc{ea} & align & $+9.12$ [$+7.40$, $+10.81$] & $+10.9$ $+7.0$ $+9.5$ & $0.151$ & $1.22$ [$1.09$, $1.37$] & $<$0.001 (93/105) \\
-\textsc{sup} & supervise & $+4.89$ [$+3.41$, $+6.41$] & $+5.5$ $+3.7$ $+5.5$ & $0.159$ & $1.28$ [$1.16$, $1.42$] & $<$0.001 (72/105) \\
-\textsc{ea+sup} & align + supervise & $+12.68$ [$+11.04$, $+14.35$] & $+13.9$ $+10.5$ $+13.7$ & $0.159$ & $1.28$ [$1.16$, $1.43$] & $<$0.001 (99/105) \\
+SUP & $\Delta$ accuracy (pp) & $+9.45$ [$+5.88$, $+12.81$] & $+6.52$ [$+3.18$, $+10.27$] & $+4.89$ [$+3.41$, $+6.41$] \\
+& $p$ (improved) & $0.019$ (9/9) & $0.005$ (12/14) & $<0.001$ (72/105) \\
+\midrule
+EA+SUP & $\Delta$ accuracy (pp) & $+13.66$ [$+9.53$, $+17.44$] & $+11.13$ [$+6.34$, $+16.16$] & $+12.68$ [$+11.04$, $+14.35$] \\
+& $p$ (improved) & $0.019$ (9/9) & $0.002$ (13/14) & $<0.001$ (99/105) \\
 \bottomrule
 \end{tabular}
 \end{table*}
