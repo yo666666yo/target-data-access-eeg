@@ -1,5 +1,9 @@
 \documentclass{article}
 \usepackage{spconf,amsmath,amssymb,graphicx,booktabs,microtype}
+% enumitem for [nosep]: \topsep is read when \list starts, so a \setlength
+% placed after \begin{itemize} comes too late and leaves a visible gap
+% between the lead-in line and the first bullet.
+\usepackage{enumitem}
 % hidelinks: the review PDF should carry no coloured frames around citations
 % and URLs, which is what plain hyperref draws.
 \usepackage[hidelinks]{hyperref}
@@ -27,16 +31,37 @@ $^{\dagger}$School of Artificial Intelligence, Southeast University, Nanjing, Ch
 $^{\ddagger}$School of Computer Science and Engineering, Southeast University, Nanjing, China \\
 \{yo666666yo, 213241737, ChenyangLiu, chunfeng.yang\}@seu.edu.cn}
 
+% The reference list is long for the fifth page. \itemsep and \parsep are
+% read at each \item, so unlike \topsep they can be set from inside the
+% environment; this tightens the list without touching the font size,
+% which the kit floors at 9 pt.
+\makeatletter
+\let\spconf@oldthebibliography\thebibliography
+\renewcommand{\thebibliography}[1]{%
+  \spconf@oldthebibliography{#1}%
+  \setlength{\itemsep}{0pt}%
+  \setlength{\parsep}{0pt}}
+\makeatother
+% article's twocolumn default is \flushbottom, which pads a short
+% column by stretching its rubber lengths; the space after a heading
+% is the most elastic thing on the page and visibly absorbs it.
+\raggedbottom
+% spconf leaves float spacing at article's default of 20 pt between a
+% float and the text. With four floats that bumped two section headings
+% off their column foot, each leaving a blank band; 12 pt is the usual
+% IEEE setting and still separates a float clearly.
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{12pt plus 2pt minus 2pt}
 \begin{document}
 \ninept
 \maketitle
 
 \begin{abstract}
-Cross-subject EEG decoders are compared across protocols that use the target subject differently, and the gaps are read as the value of that access. That reading holds only if everything else is matched. We divide each held-out subject's trials into an available half and a reserved half, score every condition on the reserved half, and cross two procedures: Euclidean Alignment and supervised training on the available half. The source partition, epoch budget, sampling rate and scored trials are fixed and checked against the realized indices. On three motor-imagery datasets spanning 9 to 105 subjects both procedures help, but their ordering reverses and no interaction replicates; capping the calibration set shows that its size alone does not explain the reversal. A second control, regrouping identical predictions without retraining, shows a reported between-subject spread tracks the trials per subject. Neither what target access buys nor what a spread means can be assumed portable across datasets. Code, logs and per-trial predictions: \url{https://github.com/yo666666yo/target-data-access-eeg}.
+Cross-subject EEG studies give held-out target-subject data different roles across protocols. An accuracy gap measures the performance gain attributable to using those target-subject trials only when other evaluation conditions are aligned; otherwise it may reflect differences in partitioning, sample exposure, model selection, or scoring. We partition each held-out subject's trials into available and reserved halves, score all conditions on the same reserved trials, and cross Euclidean Alignment with supervised training on the available half. The source split, per-epoch sample budget, early-stopping rule, target sampling rate, and realized indices are fixed. Across BCI Competition IV 2a, BNCI2014-002, and PhysionetMI, both procedures improve performance, but their ordering reverses across datasets. A no-retraining regrouping control shows that the standard deviation read as between-subject heterogeneity also changes with trials per group. Thus, target-data value and between-subject spread depend on dataset and evaluation design. Our code is available at \url{https://github.com/yo666666yo/target-data-access-eeg}.
 \end{abstract}
 
 \begin{keywords}
-Brain--computer interfaces, cross-subject evaluation, Euclidean alignment, calibration data, between-subject variability
+Brain--computer interfaces, cross-subject evaluation, Euclidean alignment, calibration data
 \end{keywords}
 
 \input{sections/01_introduction}
@@ -50,10 +75,7 @@ Brain--computer interfaces, cross-subject evaluation, Euclidean alignment, calib
 % Permitted on the optional fifth page alongside references and funding notes.
 \section*{Compliance with Ethical Standards}
 This work is a secondary analysis of three public motor-imagery EEG corpora: BCI Competition IV
-dataset 2a, BNCI2014-002 and the PhysioNet EEG Motor Movement/Imagery database. Each was
-released by its originators for open research use with participant consent and ethical approval
-obtained by the original investigators. No new data were recorded and no human participants were involved in
-this study, so no additional ethical approval was required. The authors declare no conflict of
+dataset 2a, BNCI2014-002 and the PhysioNet EEG Motor Movement/Imagery database. Each was released by its originators for open research use, with participant consent and ethical approval obtained by the original investigators. No new data were recorded and no human participants were involved, so no additional approval was required. The authors declare no conflict of
 interest.
 
 \bibliographystyle{IEEEbib}

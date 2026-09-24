@@ -25,7 +25,8 @@ approximated by cubic Beziers), so the PDFs are infinitely zoomable.
 Self-contained: only matplotlib is required.
 
 Run:  python figures/gen_fig_design.py
-      -> manuscript/figures/figure1.pdf, manuscript/figures/figure2.pdf
+      -> manuscript/figures/figure2.pdf
+      (Figure 1 comes from figures/fig_ab/fig_ab.py)
 """
 import math
 import re
@@ -37,8 +38,16 @@ from matplotlib.path import Path
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, PathPatch, Rectangle
 from matplotlib.transforms import Affine2D
 
-plt.rcParams["font.family"] = "sans-serif"
-plt.rcParams["font.sans-serif"] = ["Arial", "Liberation Sans", "DejaVu Sans"]
+# The paper is set in Times (spconf pulls in Nimbus Roman, the URW clone), and
+# the ICASSP kit asks for Times or Computer Modern throughout, so the figures
+# follow the body rather than standing apart in a sans face.  STIX is the
+# Times-matched maths font, which keeps $C_s$ in a figure looking like $C_s$ in
+# a sentence.
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.serif"] = ["Times New Roman", "Nimbus Roman No9 L",
+                              "Nimbus Roman", "Liberation Serif",
+                              "DejaVu Serif"]
+plt.rcParams["mathtext.fontset"] = "stix"
 plt.rcParams["pdf.fonttype"] = 42
 
 # >>> ICON_SVG_DATA
@@ -353,49 +362,11 @@ def save(name):
     print("[saved]", png)
 
 
-# ================= figure 1: the two fixed divisions =================
-BANDH = 0.88
-new_canvas(COL_W, 2 * BANDH + 0.06)
-
-BX0, BX1 = 0.02, COL_W - 0.02
-BARX0, BARX1 = BX0 + 0.12, BX1 - 0.12
-BARW = BARX1 - BARX0
-
-
-def zone(y0, title_icon, title, sub, colour, bg, ec):
-    """One banded division zone: tinted field, icon-and-title, one detail line."""
-    rbox(BX0, y0, BX1 - BX0, BANDH, bg, ec, lw=0.8, rs=0.06, z=0)
-    icon_title(BX0 + 0.10, y0 + 0.71, title_icon, title, colour, fs=FS_TITLE,
-               ih=0.075)
-    text(BX0 + 0.10, y0 + 0.54, sub, FS_SUB, color=colour, ha="left")
-
-
-def divide(y0, left_frac, left_fill, right_fill, ec, left_lab, right_lab,
-           left_fs=FS_BAR, right_fs=FS_BAR):
-    """The division bar inside a zone, drawn as two abutting boxes."""
-    bh, by = 0.28, y0 + 0.12
-    rbox(BARX0, by, BARW * left_frac, bh, left_fill, ec, lw=1.0, rs=0.03, z=2)
-    rbox(BARX0 + BARW * left_frac, by, BARW * (1 - left_frac), bh, right_fill,
-         ec, lw=1.0, rs=0.03, z=2)
-    text(BARX0 + BARW * left_frac / 2, by + bh / 2, left_lab, left_fs,
-         weight="bold")
-    text(BARX0 + BARW * (1 + left_frac) / 2, by + bh / 2, right_lab, right_fs,
-         weight="bold")
-
-
-_top = BANDH + 0.06
-zone(_top, "split", "HELD-OUT SUBJECT $s$",
-     "cut once, stratified — 288 / 80 / 45 per half",
-     YEL_DK, YEL_BG, YEL_EC)
-divide(_top, 0.5, "white", "#ededed", INK, "available $C_s$",
-       "reserved $T_s$")
-
-zone(0.02, "select", "SOURCE POOL — $N{-}1$ SUBJECTS",
-     "every trial used, in every condition", GRN_DK, GRN_BG, GRN_EC)
-divide(0.02, 0.8, "white", "#ededed", GRAY, "training  80%", "sel. 20%",
-       right_fs=FS_BARSM)
-
-save("figure1")
+# ================= figure 1 =================
+# Figure 1 is drawn by figures/fig_ab/fig_ab.py (two stacked panels, one
+# column). The two-division diagram that used to be here is retired; do
+# not reinstate a save("figure1") in this script, or it will overwrite
+# that figure.
 
 # ================= figure 2: the 2x2 over the two procedures =================
 new_canvas(FULL_W, 1.95)

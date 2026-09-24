@@ -23,9 +23,10 @@ OUT = ROOT / "manuscript" / "tables"
 
 BS = chr(92)                      # backslash, kept out of string literals
 MAIN = ["EA", "SUP", "EASUP"]
-# POOL is null on all three datasets and its three values are quoted in the
-# text, so it is kept out of the table to hold the four-page limit.
-SECONDARY = ["SEL"]
+# The table carries the 2x2 only.  POOL is null everywhere and SEL now supports
+# a single one-directional claim; both are quoted in the text, which costs far
+# less space than six more rows.
+SECONDARY = []
 SHORT = {
     "SRC": BS + "textsc{src}",
     "EA": BS + "textsc{ea}",
@@ -92,8 +93,8 @@ def table_main(results):
         "at the permutation floor. SD is the between-subject standard deviation "
         "of run-averaged per-subject accuracy---a different pooling order from "
         "Section~" + BS + "ref{sec:results}, which pools variances within runs. "
-        + SHORT["SEL"] + " sits off the grid; " + SHORT["POOL"] + " is null "
-        "throughout and is quoted in the text.}",
+        + SHORT["SEL"] + " and " + SHORT["POOL"] + " sit off the grid and are "
+        "quoted in the text.}",
         BS + "label{tab:main}",
         BS + "small",
         BS + "begin{tabular}{llccccc}",
@@ -116,7 +117,7 @@ def table_main(results):
             row = row_lookup(res, cond)
             if row is None:
                 continue
-            if cond == SECONDARY[0]:
+            if SECONDARY and cond == SECONDARY[0]:
                 lines.append(BS + "addlinespace[2pt]")
             d = row["delta"]
             lines.append(

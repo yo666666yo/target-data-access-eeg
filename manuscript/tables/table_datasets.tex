@@ -1,16 +1,16 @@
-\begin{table*}[t]
+\begin{table}[b]
 \centering
-\caption{The three motor-imagery datasets. Trials per half is the declared target-data budget: each held-out subject is cut once into an available half $C_s$ and a reserved test half $T_s$ of that size. Chance differs across the datasets, so accuracies are not comparable between them.}
+\caption{The three motor-imagery datasets. Trials per half is the declared target-data budget: each held-out subject is cut once into an available half $C_s$ and a reserved test half $T_s$ of that size. Chance is given in parentheses; it differs across the datasets, so accuracies are not comparable between them.}
 \label{tab:datasets}
 \small
-\begin{tabular}{@{}lccc@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-& BCI IV 2a \cite{tangermann2012bcicompiv} & BNCI2014-002 \cite{steyrl2016bnci} & PhysionetMI \cite{schalk2004bci2000,goldberger2000physionet} \\
+& Subjects & Channels & Classes & Trials/half \\
 \midrule
-Subjects & 9 & 14 & 105 \\
-Channels & 22 & 15 & 64 \\
-Classes (chance) & 4 ($0.25$) & 2 ($0.50$) & 4 ($0.25$) \\
-Trials per half & 288 & 80 & 45 \\
+BCI IV 2a \cite{tangermann2012bcicompiv} & 9 & 22 & 4 ($0.25$) & 288 \\
+BNCI2014-002 \cite{steyrl2016bnci} & 14 & 15 & 2 ($0.50$) & 80 \\
+PhysionetMI \cite{schalk2004bci2000,goldberger2000physionet} & 105 & 64 & 4 ($0.25$) & 45 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}

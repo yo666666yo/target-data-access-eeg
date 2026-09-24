@@ -1,22 +1,22 @@
 \begin{table*}[t]
 \centering
-\caption{Effect of each procedure against its own source-only reference, under the controls of Section~\ref{sec:controls}. Differences are paired within subject and averaged over three runs. Intervals are descriptive percentile bootstrap over subjects, not multiplicity-adjusted; $p$ is Holm-corrected within each dataset, followed by the number of subjects helped, which distinguishes arms at the permutation floor. Per-run values and between-subject standard deviations are in the repository; the two arms off the grid are quoted in the text.}
+\caption{Effect of each procedure against its own source-only reference under the controls of Section~\ref{sec:controls}, paired within subject. Intervals are unadjusted percentile bootstrap; $p$ is Holm-corrected and followed by the number of subjects helped (Section~\ref{sec:stats}). Figures are from our own EEGNet implementation; Section~\ref{sec:reference} gives the braindecode counterpart.}
 \label{tab:main}
 \small
 \begin{tabular}{@{}llccc@{}}
 \toprule
 & & BCI IV 2a & BNCI2014-002 & PhysionetMI \\
 \midrule
-\multicolumn{2}{@{}l}{Source-only accuracy} & $0.450$ & $0.687$ & $0.444$ \\
+\multicolumn{2}{@{}l}{Source-only acc} & $0.450$ & $0.687$ & $0.444$ \\
 \midrule
-EA & $\Delta$ accuracy (pp) & $+1.58$ [$+0.17$, $+2.98$] & $+8.07$ [$+4.37$, $+11.96$] & $+9.12$ [$+7.40$, $+10.81$] \\
-& $p$ (improved) & $0.176$ (7/9) & $0.005$ (12/14) & $<0.001$ (93/105) \\
+EA & $\Delta$ acc (pp) & $+1.58$ [$+0.17$, $+2.98$] & $+8.07$ [$+4.37$, $+11.96$] & $+9.12$ [$+7.40$, $+10.81$] \\
+& $p$ (\# helped) & $0.176$ (7/9) & $0.005$ (12/14) & $<0.001$ (93/105) \\
 \midrule
-SUP & $\Delta$ accuracy (pp) & $+9.45$ [$+5.88$, $+12.81$] & $+6.52$ [$+3.18$, $+10.27$] & $+4.89$ [$+3.41$, $+6.41$] \\
-& $p$ (improved) & $0.019$ (9/9) & $0.005$ (12/14) & $<0.001$ (72/105) \\
+SUP & $\Delta$ acc (pp) & $+9.45$ [$+5.88$, $+12.81$] & $+6.52$ [$+3.18$, $+10.27$] & $+4.89$ [$+3.41$, $+6.41$] \\
+& $p$ (\# helped) & $0.019$ (9/9) & $0.005$ (12/14) & $<0.001$ (72/105) \\
 \midrule
-EA+SUP & $\Delta$ accuracy (pp) & $+13.66$ [$+9.53$, $+17.44$] & $+11.13$ [$+6.34$, $+16.16$] & $+12.68$ [$+11.04$, $+14.35$] \\
-& $p$ (improved) & $0.019$ (9/9) & $0.002$ (13/14) & $<0.001$ (99/105) \\
+EA+SUP & $\Delta$ acc (pp) & $+13.66$ [$+9.53$, $+17.44$] & $+11.13$ [$+6.34$, $+16.16$] & $+12.68$ [$+11.04$, $+14.35$] \\
+& $p$ (\# helped) & $0.019$ (9/9) & $0.002$ (13/14) & $<0.001$ (99/105) \\
 \bottomrule
 \end{tabular}
 \end{table*}
